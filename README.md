@@ -6,7 +6,7 @@ PlateUp is a smart campus cafeteria ordering platform built for DAU (formerly DA
 
 ### Student
 - **Multi-Canteen Discovery**: Browse all campus canteens and their live status.
-- **Smart Ordering**: Unified cart system with automatic tax and packaging fee calculation.
+- **Smart Ordering**: Unified cart system with automatic packaging fee calculation.
 - **Payments**: UPI payment workflow with support for Razorpay/Paytm payment gateway integration.
 - **Live Tracking**: Visual progress from order placement to collection.
 - **QR Pickup**: High-security verification for order collection.
@@ -57,7 +57,7 @@ cd PlateUp
 
 ### 3. Firebase Setup
 1. Create a new project in the [Firebase Console](https://console.firebase.google.com/).
-2. Enable **Authentication** (Google & Email/Password).
+2. Enable **Authentication** (Google & Anonymous).
 3. Enable **Realtime Database**.
 4. Download `google-services.json` and place it in the `app/` directory.
 5. Deploy security rules from `database.rules.json`.
@@ -65,11 +65,9 @@ cd PlateUp
 ### 4. Cloud Functions Setup
 1. Navigate to the `functions/` directory.
 2. Install dependencies: `npm install`.
-3. Set secrets for Admin Code and Payment Gateways:
+3. Set secret for Admin Code:
    ```bash
    firebase functions:secrets:set ADMIN_CODE
-   firebase functions:secrets:set RAZORPAY_KEY_ID
-   firebase functions:secrets:set RAZORPAY_KEY_SECRET
    ```
 4. Deploy functions: `firebase deploy --only functions`.
 
@@ -87,7 +85,6 @@ cd PlateUp
 ## 🔮 Future Improvements
 - **Kotlin Multiplatform**: Support for cross-platform reliability and future iOS compatibility.
 - **Advanced Analytics**: Detailed reporting for admin and vendor insights.
-- **Enhanced Vendor Insights**: Additional operational insights and reporting for vendors.
 - **Additional Gateways**: Integration with more payment providers.
 
 ## 🤝 Credits
