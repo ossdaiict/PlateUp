@@ -1,0 +1,108 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "canteens": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('admin_users').child(auth.uid).exists()",
+      "$canteenId": {
+        ".write": "auth != null && (root.child('canteen_owners').child(auth.uid).val() == $canteenId || root.child('admin_users').child(auth.uid).exists())"
+      }
+    },
+
+    "vendor_credentials": {
+      "$canteenId": {
+        ".read": false,
+        ".write": false,
+        "fcmTokens": {
+          "$tokenKey": {
+            ".read": "auth != null && (root.child('canteen_owners').child(auth.uid).val() == $canteenId || root.child('admin_users').child(auth.uid).exists())",
+            ".write": "auth != null && (root.child('canteen_owners').child(auth.uid).val() == $canteenId || root.child('admin_users').child(auth.uid).exists())"
+          }
+        }
+      }
+    },
+
+    "canteen_owners": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || root.child('admin_users').child(auth.uid).exists())",
+        ".write": false
+      }
+    },
+
+    "admin_users": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || root.child('admin_users').child(auth.uid).exists())",
+        ".write": false
+      }
+    },
+
+    "menus": {
+      ".read": "auth != null",
+      "$canteenId": {
+        ".write": "auth != null && (root.child('canteen_owners').child(auth.uid).val() == $canteenId || root.child('admin_users').child(auth.uid).exists())"
+      }
+    },
+
+    "orders": {
+      ".indexOn": ["userId", "canteenId", "status", "canteenId_status_pickupCode", "pickupCode", "pickupToken", "paymentId"],
+      ".read": "auth != null && ((query.orderByChild == 'userId' && query.equalTo == auth.uid) || (query.orderByChild == 'canteenId' && query.equalTo == root.child('canteen_owners').child(auth.uid).val()) || root.child('admin_users').child(auth.uid).exists())",
+      "$orderId": {
+        ".read": "auth != null && (data.child('userId').val() == auth.uid || root.child('canteen_owners').child(auth.uid).val() == data.child('canteenId').val() || root.child('admin_users').child(auth.uid).exists())",
+        ".write": "auth != null && (root.child('canteen_owners').child(auth.uid).val() == data.child('canteenId').val() || root.child('admin_users').child(auth.uid).exists())"
+      }
+    },
+
+    "students": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || root.child('admin_users').child(auth.uid).exists())",
+        ".write": "auth != null && auth.uid == $uid",
+        ".validate": "newData.hasChildren(['name', 'email', 'phoneNumber'])"
+      }
+    },
+
+    "carts": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+
+    "reviews": {
+      "$menuItemId": {
+        ".read": "auth != null",
+        ".indexOn": ["menuItemId"],
+        "$reviewId": {
+          ".write": "auth != null && (!data.exists() || data.child('userId').val() == auth.uid) && (newData.child('userId').val() == auth.uid)",
+          ".validate": "newData.hasChildren(['rating', 'comment', 'userId', 'menuItemId']) && newData.child('rating').isNumber() && newData.child('rating').val() >= 1 && newData.child('rating').val() <= 5 && newData.child('comment').isString() && newData.child('comment').val().length <= 500"
+        }
+      }
+    },
+
+    "menu_requests": {
+      ".read": "auth != null && (root.child('admin_users').child(auth.uid).exists() || root.child('canteen_owners').child(auth.uid).exists())",
+      ".indexOn": ["status", "canteenId"],
+      "$requestId": {
+        ".read": "auth != null && (data.child('canteenId').val() == root.child('canteen_owners').child(auth.uid).val() || root.child('admin_users').child(auth.uid).exists())",
+        ".write": "auth != null && (root.child('canteen_owners').child(auth.uid).val() == newData.child('canteenId').val() || root.child('admin_users').child(auth.uid).exists())"
+      }
+    },
+
+    "notifications": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".indexOn": ["read"],
+        "$notificationId": {
+          ".write": "auth != null && auth.uid == $uid && newData.exists() && data.exists() && newData.hasChildren(['notificationId', 'userId', 'title', 'message', 'timestamp', 'read', 'type'])",
+          ".validate": "newData.child('read').isBoolean() && newData.child('notificationId').val() == data.child('notificationId').val() && newData.child('userId').val() == data.child('userId').val() && newData.child('title').val() == data.child('title').val() && newData.child('message').val() == data.child('message').val() && newData.child('timestamp').val() == data.child('timestamp').val() && newData.child('type').val() == data.child('type').val() && newData.child('orderId').val() == data.child('orderId').val()"
+        }
+      }
+    },
+
+    "admin": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

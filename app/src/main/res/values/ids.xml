@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="tag_original_left_padding" type="id" />
+    <item name="tag_original_top_padding" type="id" />
+    <item name="tag_original_right_padding" type="id" />
+    <item name="tag_original_bottom_padding" type="id" />
+    <item name="tag_original_top_margin" type="id" />
+    <item name="tag_original_bottom_margin" type="id" />
+</resources>
