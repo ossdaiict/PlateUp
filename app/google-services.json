@@ -15,47 +15,18 @@
       },
       "oauth_client": [
         {
+          "client_id": "1026907671697-8s61varsfns4c6cdv4rsbgfo0tlm82h8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.app.plateup",
+            "certificate_hash": "fd319c46cb13b09d372b4c28ffbf1abbd4d0f0c3"
+          }
+        },
+        {
           "client_id": "1026907671697-lsnl3cmj0cvhm7k3m8le4mh8k22erkbs.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.app.plateup",
-            "certificate_hash": "7e229527d026c78e3787682b14e6156d7c3dbd99"
-          }
-        },
-        {
-          "client_id": "1026907671697-44ekv045aedkhcbj6e87c3n4j3e0610g.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBIT5B4Jw05aEFj1qnO8TK8TMGd3Xe-PRQ"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "1026907671697-44ekv045aedkhcbj6e87c3n4j3e0610g.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:1026907671697:android:5e0b43b395c2b10a0dc330",
-        "android_client_info": {
-          "package_name": "com.plateup.app"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "1026907671697-h92783b0cigkg2pgh4ab59q7qmj45ui9.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.plateup.app",
             "certificate_hash": "7e229527d026c78e3787682b14e6156d7c3dbd99"
           }
         },
