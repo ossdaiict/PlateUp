@@ -220,11 +220,14 @@ class MenuItemDetailActivity : BaseActivity() {
 
         lifecycleScope.launch {
             try {
+                showLoading("Saving review...")
                 database.child("reviews/$menuItemId/$id").setValue(review).await()
                 updateMenuItemRating()
+                hideLoading()
                 showSuccess("Review saved")
             } catch (e: Exception) {
-                showError("Error: ${e.message}")
+                hideLoading()
+                showError("Error saving review: ${e.message}")
             }
         }
     }
@@ -237,20 +240,24 @@ class MenuItemDetailActivity : BaseActivity() {
             onConfirm = {
                 lifecycleScope.launch {
                     try {
+                        showLoading("Deleting review...")
                         database.child("reviews/$menuItemId/${review.id}").removeValue().await()
                         updateMenuItemRating()
+                        hideLoading()
                         showSuccess("Review deleted")
                     } catch (e: Exception) {
-                        showError("Error: ${e.message}")
+                        hideLoading()
+                        showError("Error deleting review: ${e.message}")
                     }
                 }
             }
         )
     }
 
-    private fun updateMenuItemRating() {
+    private suspend fun updateMenuItemRating() {
         // Recalculate average rating
-        database.child("reviews/$menuItemId").get().addOnSuccessListener { snapshot ->
+        try {
+            val snapshot = database.child("reviews/$menuItemId").get().await()
             var totalRating = 0f
             var count = 0
             for (reviewSnapshot in snapshot.children) {
@@ -266,7 +273,9 @@ class MenuItemDetailActivity : BaseActivity() {
                 "averageRating" to average,
                 "reviewCount" to count
             )
-            database.child("menus/$canteenId/$menuItemId").updateChildren(updates)
+            database.child("menus/$canteenId/$menuItemId").updateChildren(updates).await()
+        } catch (e: Exception) {
+            android.util.Log.e("MenuItemDetail", "Error updating menu item rating", e)
         }
     }
 

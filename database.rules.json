@@ -41,7 +41,15 @@
     "menus": {
       ".read": "auth != null",
       "$canteenId": {
-        ".write": "auth != null && (root.child('canteen_owners').child(auth.uid).val() == $canteenId || root.child('admin_users').child(auth.uid).exists())"
+        ".write": "auth != null && (root.child('canteen_owners').child(auth.uid).val() == $canteenId || root.child('admin_users').child(auth.uid).exists())",
+        "$menuItemId": {
+          "averageRating": {
+            ".write": "auth != null"
+          },
+          "reviewCount": {
+            ".write": "auth != null"
+          }
+        }
       }
     },
 
@@ -74,8 +82,8 @@
         ".read": "auth != null",
         ".indexOn": ["menuItemId"],
         "$reviewId": {
-          ".write": "auth != null && (!data.exists() || data.child('userId').val() == auth.uid) && (newData.child('userId').val() == auth.uid)",
-          ".validate": "newData.hasChildren(['rating', 'comment', 'userId', 'menuItemId']) && newData.child('rating').isNumber() && newData.child('rating').val() >= 1 && newData.child('rating').val() <= 5 && newData.child('comment').isString() && newData.child('comment').val().length <= 500"
+          ".write": "auth != null && (root.child('admin_users').child(auth.uid).exists() || ((!data.exists() || data.child('userId').val() == auth.uid) && (!newData.exists() || newData.child('userId').val() == auth.uid)))",
+          ".validate": "newData.exists() ? (newData.hasChildren(['rating', 'comment', 'userId', 'menuItemId']) && newData.child('rating').isNumber() && newData.child('rating').val() >= 1 && newData.child('rating').val() <= 5 && newData.child('comment').isString() && newData.child('comment').val().length <= 500) : true"
         }
       }
     },
