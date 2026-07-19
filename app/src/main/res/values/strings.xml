@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">PlateUp</string>
     <string name="default_web_client_id">1026907671697-44ekv045aedkhcbj6e87c3n4j3e0610g.apps.googleusercontent.com</string>
+    <string name="current">Current</string>
+    <string name="history">History</string>
+    <string name="search_hint">Search student or order ID</string>
 </resources>

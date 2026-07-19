@@ -23,6 +23,9 @@ import com.google.firebase.database.ValueEventListener
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.TimeUnit
+import android.os.Handler
+import android.os.Looper
 
 class VendorOrderDetailsActivity : BaseActivity() {
 
@@ -32,6 +35,16 @@ class VendorOrderDetailsActivity : BaseActivity() {
     private lateinit var adapter: OrderDetailsAdapter
     private var orderId = ""
     private lateinit var currentOrder: Order
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val ageUpdateRunnable = object : Runnable {
+        override fun run() {
+            if (::currentOrder.isInitialized) {
+                updateAgeIndicator()
+            }
+            handler.postDelayed(this, 60000)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -135,6 +148,7 @@ class VendorOrderDetailsActivity : BaseActivity() {
                 adapter.notifyDataSetChanged()
 
                 updateButtons(order.status)
+                updateAgeIndicator()
 
             }
 
@@ -143,6 +157,39 @@ class VendorOrderDetailsActivity : BaseActivity() {
             }
         }
         registerListener(orderRef, listener)
+    }
+
+    private fun updateAgeIndicator() {
+        if (currentOrder.isPastOrder()) {
+            binding.ageIndicator.visibility = View.GONE
+            return
+        }
+
+        binding.ageIndicator.visibility = View.VISIBLE
+        val ageMs = System.currentTimeMillis() - currentOrder.timestamp
+        val ageMins = TimeUnit.MILLISECONDS.toMinutes(ageMs)
+
+        binding.ageIndicator.text = if (ageMins == 0L) "Now" else "$ageMins min"
+
+        when {
+            ageMins < 10 -> binding.ageIndicator.setBackgroundResource(R.drawable.bg_age_green)
+            ageMins < 15 -> binding.ageIndicator.setBackgroundResource(R.drawable.bg_age_amber)
+            else -> binding.ageIndicator.setBackgroundResource(R.drawable.bg_age_red)
+        }
+    }
+
+    private fun Order.isPastOrder(): Boolean {
+        return status in setOf("COLLECTED", "COMPLETED", "REJECTED", "EXPIRED", "CANCELLED")
+    }
+
+    override fun onStart() {
+        super.onStart()
+        handler.post(ageUpdateRunnable)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        handler.removeCallbacks(ageUpdateRunnable)
     }
 
     private fun updateButtons(status: String) {
