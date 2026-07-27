@@ -19,6 +19,12 @@ import kotlinx.coroutines.tasks.await
 
 import com.google.firebase.messaging.FirebaseMessaging
 
+import com.google.firebase.FirebaseException
+import com.google.firebase.auth.PhoneAuthCredential
+import com.google.firebase.auth.PhoneAuthOptions
+import com.google.firebase.auth.PhoneAuthProvider
+import java.util.concurrent.TimeUnit
+
 class RegisterActivity : BaseActivity() {
 
     private lateinit var binding: ActivityRegisterBinding
@@ -34,11 +40,17 @@ class RegisterActivity : BaseActivity() {
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance().reference
 
+        // Handle prefilled values if returning from OTP screen
+        val prefilledName = intent.getStringExtra("PREFILLED_NAME")
+        val prefilledPhone = intent.getStringExtra("PREFILLED_PHONE")
+        if (prefilledName != null) binding.nameInput.setText(prefilledName)
+        if (prefilledPhone != null) binding.phoneInput.setText(prefilledPhone)
+
         binding.continueBtn.applySystemInsets(applyTop = false, applyBottom = true, useMargin = true)
 
         binding.continueBtn.setOnClickListener {
             val name = binding.nameInput.text.toString().trim()
-            val phoneNumber = binding.phoneInput.text.toString().trim()
+            var phoneNumber = binding.phoneInput.text.toString().trim()
 
             if (name.isEmpty()) {
                 binding.nameInput.error = "Name is required"
@@ -49,44 +61,64 @@ class RegisterActivity : BaseActivity() {
                 return@setOnClickListener
             }
 
-            hideKeyboard()
-            binding.continueBtn.isEnabled = false
-            showLoading("Creating your account...")
-
-            val firebaseUser = auth.currentUser
-            val student = Student(
-                uid = firebaseUser?.uid ?: "",
-                name = name,
-                email = firebaseUser?.email ?: "",
-                phoneNumber = phoneNumber
-            )
-
-            lifecycleScope.launch {
-                try {
-                    database.child("students/${student.uid}").setValue(student).await()
-                    
-                    FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            database.child("students/${student.uid}/fcmToken").setValue(task.result)
-                        }
-                        
-                        hideLoading()
-                        val intent = Intent(this@RegisterActivity, StudentDashboardActivity::class.java).apply {
-                            putExtra("WELCOME_MESSAGE", "Welcome to PlateUp!")
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        }
-                        startActivity(intent)
-                        finish()
-                    }
-                } catch (e: Exception) {
-                    hideLoading()
-                    binding.continueBtn.isEnabled = true
-                    showError(e.message ?: "Registration failed")
+            // Standardize phone number for India (+91)
+            if (!phoneNumber.startsWith("+")) {
+                phoneNumber = if (phoneNumber.startsWith("91") && phoneNumber.length > 10) {
+                    "+$phoneNumber"
+                } else {
+                    "+91$phoneNumber"
                 }
             }
 
+            hideKeyboard()
+            binding.continueBtn.isEnabled = false
+            startPhoneVerification(name, phoneNumber)
+        }
+    }
+
+    private fun startPhoneVerification(name: String, phoneNumber: String) {
+        showLoading("Sending verification code...")
+
+        val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+            override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+                // This might happen for auto-verification. 
+                // We'll pass the credential code if available, otherwise proceed to OTP screen
+                hideLoading()
+                val intent = Intent(this@RegisterActivity, OtpVerificationActivity::class.java).apply {
+                    putExtra("STUDENT_NAME", name)
+                    putExtra("PHONE_NUMBER", phoneNumber)
+                    putExtra("AUTO_VERIFIED_CODE", credential.smsCode)
+                }
+                startActivity(intent)
+                finish()
+            }
+
+            override fun onVerificationFailed(e: FirebaseException) {
+                hideLoading()
+                binding.continueBtn.isEnabled = true
+                showError(e.message ?: "Verification failed")
+            }
+
+            override fun onCodeSent(verificationId: String, token: PhoneAuthProvider.ForceResendingToken) {
+                hideLoading()
+                val intent = Intent(this@RegisterActivity, OtpVerificationActivity::class.java).apply {
+                    putExtra("VERIFICATION_ID", verificationId)
+                    putExtra("RESEND_TOKEN", token)
+                    putExtra("STUDENT_NAME", name)
+                    putExtra("PHONE_NUMBER", phoneNumber)
+                }
+                startActivity(intent)
+            }
         }
 
+        val options = PhoneAuthOptions.newBuilder(auth)
+            .setPhoneNumber(phoneNumber)
+            .setTimeout(60L, TimeUnit.SECONDS)
+            .setActivity(this)
+            .setCallbacks(callbacks)
+            .build()
+        
+        PhoneAuthProvider.verifyPhoneNumber(options)
     }
 
 }

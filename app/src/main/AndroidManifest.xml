@@ -97,6 +97,9 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".activities.OtpVerificationActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.RegisterActivity"
             android:exported="false" />
         <activity
