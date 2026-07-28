@@ -152,6 +152,42 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Contacts Section -->
+            <TextView
+                android:id="@+id/contactsTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:layout_marginStart="8dp"
+                android:text="Canteen Contacts"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textAllCaps="true"
+                android:visibility="gone"
+                tools:visibility="visible"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/contactsCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="1dp"
+                app:cardBackgroundColor="@color/card_background"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/contactsRecyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="8dp"
+                    android:nestedScrollingEnabled="false"
+                    tools:listitem="@layout/item_contact_read_only"/>
+
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Menu Section -->
             <TextView
                 android:layout_width="wrap_content"

@@ -8,9 +8,11 @@ import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.app.plateup.R
+import com.app.plateup.adapters.AdminContactAdapter
 import com.app.plateup.adapters.AdminMenuAdapter
 import com.app.plateup.databinding.ActivityAdminCanteenDetailsBinding
 import com.app.plateup.models.Canteen
+import com.app.plateup.models.CanteenContact
 import com.app.plateup.models.MenuItem
 import com.app.plateup.utils.CanteenUtils
 import com.google.firebase.database.*
@@ -22,6 +24,8 @@ class AdminCanteenDetailsActivity : BaseActivity() {
     private lateinit var canteenId: String
     private val displayList = ArrayList<Any>()
     private lateinit var menuAdapter: AdminMenuAdapter
+    private lateinit var contactAdapter: AdminContactAdapter
+    private val contactsList = ArrayList<CanteenContact>()
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +42,7 @@ class AdminCanteenDetailsActivity : BaseActivity() {
         }
 
         setupRecyclerView()
+        setupContactsRecyclerView()
         loadCanteenDetails()
         loadMenu()
 
@@ -54,6 +59,12 @@ class AdminCanteenDetailsActivity : BaseActivity() {
         }
         binding.adminMenuRecyclerView.layoutManager = LinearLayoutManager(this)
         binding.adminMenuRecyclerView.adapter = menuAdapter
+    }
+
+    private fun setupContactsRecyclerView() {
+        contactAdapter = AdminContactAdapter(contactsList)
+        binding.contactsRecyclerView.layoutManager = LinearLayoutManager(this)
+        binding.contactsRecyclerView.adapter = contactAdapter
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -102,6 +113,19 @@ class AdminCanteenDetailsActivity : BaseActivity() {
         
         setupRow(binding.rowPackaging.root, "Packaging Fee", 
             if (canteen.packagingFee > 0) "₹${canteen.packagingFee.toInt()}" else "Free")
+
+        // Contacts
+        contactsList.clear()
+        contactsList.addAll(canteen.contacts)
+        contactAdapter.notifyDataSetChanged()
+
+        if (contactsList.isEmpty()) {
+            binding.contactsTitle.visibility = View.GONE
+            binding.contactsCard.visibility = View.GONE
+        } else {
+            binding.contactsTitle.visibility = View.VISIBLE
+            binding.contactsCard.visibility = View.VISIBLE
+        }
     }
 
     private fun setupRow(view: View, label: String, value: String) {

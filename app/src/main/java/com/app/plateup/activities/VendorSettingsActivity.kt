@@ -4,9 +4,20 @@ import android.app.TimePickerDialog
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.ArrayAdapter
+import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.app.plateup.R
+import com.app.plateup.adapters.CanteenContactAdapter
 import com.app.plateup.databinding.ActivityVendorSettingsBinding
+import com.app.plateup.databinding.DialogAddContactBinding
 import com.app.plateup.models.Canteen
+import com.app.plateup.models.CanteenContact
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.functions.FirebaseFunctions
@@ -27,6 +38,10 @@ class VendorSettingsActivity : BaseActivity() {
     private var closingTime = ""
     private var currentMode = "AUTO"
 
+    private val contactsList = mutableListOf<CanteenContact>()
+    private lateinit var contactAdapter: CanteenContactAdapter
+    private var isDirty = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -44,8 +59,31 @@ class VendorSettingsActivity : BaseActivity() {
         isFirstSetup = intent.getBooleanExtra("FIRST_SETUP", false)
 
         setupUI()
+        setupContactsRecyclerView()
         loadCanteen()
         setupListeners()
+        setupBackPressed()
+    }
+
+    private fun setupBackPressed() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (isDirty) {
+                    showDiscardChangesDialog()
+                } else {
+                    finish()
+                }
+            }
+        })
+    }
+
+    private fun showDiscardChangesDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Discard Changes?")
+            .setMessage("You have unsaved changes. Are you sure you want to discard them?")
+            .setPositiveButton("Discard") { _, _ -> finish() }
+            .setNegativeButton("Keep Editing", null)
+            .show()
     }
 
     private fun setupUI() {
@@ -58,6 +96,115 @@ class VendorSettingsActivity : BaseActivity() {
             binding.subtitleText.text = "Update your canteen's operating hours and order settings."
             binding.saveButton.text = "Save Changes"
         }
+    }
+
+    private fun setupContactsRecyclerView() {
+        contactAdapter = CanteenContactAdapter(
+            contactsList,
+            onEdit = { position -> showContactDialog(contactsList[position], position) },
+            onDelete = { position -> 
+                contactsList.removeAt(position)
+                if (contactsList.none { it.isPrimary } && contactsList.isNotEmpty()) {
+                    contactsList[0].isPrimary = true
+                }
+                updateContactsListUI()
+                markDirty()
+            },
+            onPrimaryChanged = { position ->
+                contactsList.forEach { it.isPrimary = false }
+                contactsList[position].isPrimary = true
+                contactAdapter.notifyDataSetChanged()
+                markDirty()
+            }
+        )
+        binding.contactsRecyclerView.layoutManager = LinearLayoutManager(this)
+        binding.contactsRecyclerView.adapter = contactAdapter
+    }
+
+    private fun updateContactsListUI() {
+        contactAdapter.notifyDataSetChanged()
+        if (contactsList.isEmpty()) {
+            binding.contactsRecyclerView.visibility = View.GONE
+            binding.emptyContactsLayout.visibility = View.VISIBLE
+        } else {
+            binding.contactsRecyclerView.visibility = View.VISIBLE
+            binding.emptyContactsLayout.visibility = View.GONE
+        }
+        checkValidation()
+    }
+
+    private fun showContactDialog(contact: CanteenContact? = null, position: Int? = null) {
+        val dialogBinding = DialogAddContactBinding.inflate(LayoutInflater.from(this))
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogBinding.root)
+            .create()
+
+        val roles = arrayOf("Vendor", "Manager", "Staff", "Other")
+        val adapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, roles)
+        dialogBinding.roleDropdown.setAdapter(adapter)
+
+        if (contact != null) {
+            dialogBinding.dialogTitle.text = "Edit Contact"
+            dialogBinding.nameEdit.setText(contact.name)
+            dialogBinding.roleDropdown.setText(contact.role, false)
+            dialogBinding.phoneEdit.setText(contact.phoneNumber.replace("+91", ""))
+            dialogBinding.saveBtn.text = "Update"
+        }
+
+        dialogBinding.cancelBtn.setOnClickListener { dialog.dismiss() }
+        dialogBinding.saveBtn.setOnClickListener {
+            val name = dialogBinding.nameEdit.text.toString().trim()
+            val role = dialogBinding.roleDropdown.text.toString().trim()
+            val phone = dialogBinding.phoneEdit.text.toString().trim()
+
+            if (name.isEmpty()) {
+                dialogBinding.nameLayout.error = "Name is required"
+                return@setOnClickListener
+            }
+            if (role.isEmpty()) {
+                dialogBinding.roleLayout.error = "Role is required"
+                return@setOnClickListener
+            }
+            if (phone.length != 10) {
+                dialogBinding.phoneLayout.error = "Valid 10-digit number required"
+                return@setOnClickListener
+            }
+
+            val normalizedPhone = "+91$phone"
+            val newContact = CanteenContact(
+                name = name,
+                role = role,
+                phoneNumber = normalizedPhone,
+                isPrimary = contact?.isPrimary ?: (contactsList.isEmpty())
+            )
+
+            if (position != null) {
+                contactsList[position] = newContact
+            } else {
+                contactsList.add(newContact)
+            }
+
+            updateContactsListUI()
+            markDirty()
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun markDirty() {
+        isDirty = true
+        checkValidation()
+    }
+
+    private fun checkValidation() {
+        val packagingFee = binding.packagingFeeEdit.text.toString().trim()
+        
+        val isHoursValid = binding.open24HoursSwitch.isChecked || (openingTime.isNotBlank() && closingTime.isNotBlank())
+        val isFeeValid = packagingFee.isNotBlank()
+        val isContactsValid = contactsList.isNotEmpty()
+
+        binding.saveButton.isEnabled = isHoursValid && isFeeValid && isContactsValid
     }
 
     private fun loadCanteen() {
@@ -87,6 +234,13 @@ class VendorSettingsActivity : BaseActivity() {
                     "FORCE_CLOSED" -> binding.availabilityToggleGroup.check(R.id.modeClosedBtn)
                     else -> binding.availabilityToggleGroup.check(R.id.modeAutoBtn)
                 }
+
+                contactsList.clear()
+                contactsList.addAll(canteen.contacts)
+                updateContactsListUI()
+                
+                isDirty = false
+                checkValidation()
             }
             .addOnFailureListener {
                 hideLoading()
@@ -95,7 +249,9 @@ class VendorSettingsActivity : BaseActivity() {
     }
 
     private fun setupListeners() {
-        binding.backImage.setOnClickListener { finish() }
+        binding.backImage.setOnClickListener { 
+            if (isDirty) showDiscardChangesDialog() else finish() 
+        }
 
         binding.openingTimeEdit.setOnClickListener {
             showTimePicker(true)
@@ -111,6 +267,7 @@ class VendorSettingsActivity : BaseActivity() {
 
             binding.openingTimeLayout.alpha = if (checked) 0.5f else 1f
             binding.closingTimeLayout.alpha = if (checked) 0.5f else 1f
+            markDirty()
         }
 
         binding.availabilityToggleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
@@ -120,8 +277,29 @@ class VendorSettingsActivity : BaseActivity() {
                     R.id.modeClosedBtn -> "FORCE_CLOSED"
                     else -> "AUTO"
                 }
+                markDirty()
             }
         }
+
+        binding.addContactBtn.setOnClickListener {
+            showContactDialog()
+        }
+
+        binding.packagingFeeEdit.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                markDirty()
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        binding.paytmMidEdit.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                markDirty()
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
 
         binding.saveButton.setOnClickListener {
             saveSettings()
@@ -161,6 +339,7 @@ class VendorSettingsActivity : BaseActivity() {
                     closingTime = storedTime
                     binding.closingTimeEdit.setText(displayTime)
                 }
+                markDirty()
             },
             hour,
             minute,
@@ -189,6 +368,11 @@ class VendorSettingsActivity : BaseActivity() {
             return
         }
 
+        if (contactsList.isEmpty()) {
+            showError("At least one contact is required")
+            return
+        }
+
         showLoading("Saving...")
 
         val updates = hashMapOf<String, Any>(
@@ -198,13 +382,15 @@ class VendorSettingsActivity : BaseActivity() {
             "packagingFee" to packagingFee.toDouble(),
             "availabilityMode" to currentMode,
             "availabilityUpdatedAt" to System.currentTimeMillis(),
-            "configurationComplete" to true
+            "configurationComplete" to true,
+            "contacts" to contactsList
         )
 
         database.child("canteens")
             .child(canteenId)
             .updateChildren(updates)
             .addOnSuccessListener {
+                isDirty = false
                 if (paytmMid.isNotEmpty() && paytmKey.isNotEmpty()) {
                     updatePaymentSettings(paytmMid, paytmKey)
                 } else {

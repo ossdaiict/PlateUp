@@ -14,5 +14,6 @@ data class Canteen (
     var paymentStatus: String = "NOT_CONFIGURED",
     var providerAccountId: String = "",
     var availabilityMode: String = "AUTO",
-    var availabilityUpdatedAt: Long = 0
+    var availabilityUpdatedAt: Long = 0,
+    var contacts: List<CanteenContact> = emptyList()
 )
