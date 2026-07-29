@@ -14,12 +14,16 @@ import com.app.plateup.R
 import com.app.plateup.adapters.OrderDetailsAdapter
 import com.app.plateup.databinding.ActivityStudentOrderDetailsBinding
 import com.app.plateup.databinding.ItemOrderTrackingStepBinding
+import com.app.plateup.models.Canteen
 import com.app.plateup.models.Order
 import com.app.plateup.models.OrderItem
+import com.app.plateup.models.OrderStatus
 import com.app.plateup.models.PaymentData
 import com.app.plateup.models.PaymentResult
 import com.app.plateup.payments.PaymentGatewayFactory
 import com.app.plateup.payments.RazorpayGateway
+import com.app.plateup.utils.CanteenUtils
+import com.app.plateup.utils.CommunicationUtils
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -48,6 +52,9 @@ class StudentOrderDetailsActivity : BaseActivity(), PaymentResultWithDataListene
     private var serverTimeOffset: Long = 0
     private val handler = Handler(Looper.getMainLooper())
     private var countdownRunnable: Runnable? = null
+    private var canteenListener: ValueEventListener? = null
+    private var primaryContactPhone: String? = null
+    private var currentCanteenId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,6 +92,12 @@ class StudentOrderDetailsActivity : BaseActivity(), PaymentResultWithDataListene
 
         binding.payNowBtn.setOnClickListener {
             initiatePayment()
+        }
+
+        binding.btnContactCanteen.setOnClickListener {
+            primaryContactPhone?.let { phone ->
+                CommunicationUtils.dialNumber(this, phone)
+            }
         }
 
     }
@@ -130,29 +143,30 @@ class StudentOrderDetailsActivity : BaseActivity(), PaymentResultWithDataListene
                 val formatter = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
                 val formattedTime = formatter.format(Date(order.timestamp))
                 binding.timeText.text = formattedTime
-                binding.statusChip.text = if (order.status == "AWAITING_PAYMENT") "PAYMENT REQUIRED" else order.status
+                binding.statusChip.text = if (order.status == OrderStatus.AWAITING_PAYMENT) "PAYMENT REQUIRED" else order.status
                 updateTracking(order)
                 updatePickupCard(order)
                 updatePaymentUI(order)
+                updateCommunicationUI(order)
 
                 when (order.status) {
-                    "PLACED" -> {
+                    OrderStatus.PLACED -> {
                         binding.statusChip.setTextColor(ContextCompat.getColor(this@StudentOrderDetailsActivity, R.color.primary))
                         binding.statusChip.setBackgroundResource(R.drawable.bg_pending_chip)
                     }
-                    "AWAITING_PAYMENT" -> {
+                    OrderStatus.AWAITING_PAYMENT -> {
                         binding.statusChip.setTextColor(ContextCompat.getColor(this@StudentOrderDetailsActivity, R.color.primary))
                         binding.statusChip.setBackgroundResource(R.drawable.bg_pending_chip)
                     }
-                    "ACCEPTED", "READY", "COLLECTED", "COMPLETED" -> {
+                    OrderStatus.READY, OrderStatus.COLLECTED, OrderStatus.COMPLETED -> {
                         binding.statusChip.setTextColor(ContextCompat.getColor(this@StudentOrderDetailsActivity, R.color.success))
                         binding.statusChip.setBackgroundResource(R.drawable.bg_open_chip)
                     }
-                    "PREPARING" -> {
+                    OrderStatus.PREPARING -> {
                         binding.statusChip.setTextColor(ContextCompat.getColor(this@StudentOrderDetailsActivity, R.color.admin_auth))
                         binding.statusChip.setBackgroundResource(R.drawable.bg_add_request_chip)
                     }
-                    "REJECTED", "CANCELLED", "EXPIRED" -> {
+                    OrderStatus.REJECTED, OrderStatus.CANCELLED, OrderStatus.EXPIRED -> {
                         binding.statusChip.setTextColor(ContextCompat.getColor(this@StudentOrderDetailsActivity, R.color.error))
                         binding.statusChip.setBackgroundResource(R.drawable.bg_close_chip)
                     }
@@ -172,17 +186,77 @@ class StudentOrderDetailsActivity : BaseActivity(), PaymentResultWithDataListene
     }
 
     private fun updatePaymentUI(order: Order) {
-        if (order.status == "AWAITING_PAYMENT") {
+        if (order.status == OrderStatus.AWAITING_PAYMENT) {
             binding.paymentRequiredLayout.visibility = View.VISIBLE
-            startCountdown(order.paymentDueAt)
+            // If paymentDueAt is not yet set by backend, we rely on the countdown starting
+            // once the order object updates with the timestamp.
+            if (order.paymentDueAt > 0) {
+                startCountdown(order.paymentDueAt)
+            } else {
+                stopCountdown() // Stop any previous timer
+                binding.paymentCountdownText.text = "Initializing timer..."
+                binding.payNowBtn.isEnabled = true
+            }
         } else {
             binding.paymentRequiredLayout.visibility = View.GONE
             stopCountdown()
         }
     }
 
+    private fun updateCommunicationUI(order: Order) {
+        if (CanteenUtils.isOrderActiveForCommunication(order.status)) {
+            listenToCanteen(order.canteenId)
+        } else {
+            stopListeningToCanteen()
+            primaryContactPhone = null
+            refreshContactButtonVisibility()
+        }
+    }
+
+    private fun refreshContactButtonVisibility() {
+        val isActive = currentOrder?.let { 
+            CanteenUtils.isOrderActiveForCommunication(it.status) 
+        } ?: false
+        binding.btnContactCanteen.visibility = if (isActive && primaryContactPhone != null) View.VISIBLE else View.GONE
+    }
+
+    private fun listenToCanteen(canteenId: String) {
+        if (canteenId.isEmpty()) return
+        
+        if (canteenId == currentCanteenId && canteenListener != null) {
+            refreshContactButtonVisibility()
+            return
+        }
+
+        stopListeningToCanteen()
+        currentCanteenId = canteenId
+
+        val canteenRef = database.child("canteens").child(canteenId)
+        canteenListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val canteen = snapshot.getValue(Canteen::class.java)
+                val primaryContact = canteen?.let { CanteenUtils.getPrimaryContact(it) }
+                primaryContactPhone = primaryContact?.phoneNumber
+                refreshContactButtonVisibility()
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        registerListener(canteenRef, canteenListener!!)
+    }
+
+    private fun stopListeningToCanteen() {
+        canteenListener?.let {
+            val canteenRef = database.child("canteens").child(currentCanteenId ?: "")
+            unregisterListener(canteenRef, it)
+            canteenListener = null
+            currentCanteenId = null
+        }
+    }
+
     private fun startCountdown(dueAt: Long) {
         stopCountdown()
+        
         countdownRunnable = object : Runnable {
             override fun run() {
                 val currentTime = System.currentTimeMillis() + serverTimeOffset
@@ -191,10 +265,14 @@ class StudentOrderDetailsActivity : BaseActivity(), PaymentResultWithDataListene
                     val minutes = (remaining / 1000) / 60
                     val seconds = (remaining / 1000) % 60
                     binding.paymentCountdownText.text = String.format(Locale.getDefault(), "%02d:%02d remaining", minutes, seconds)
-                    handler.postDelayed(this, 1000)
+                    binding.payNowBtn.isEnabled = true
                 } else {
                     binding.paymentCountdownText.text = "00:00 - Expired"
                     binding.payNowBtn.isEnabled = false
+                }
+                
+                if (remaining > 0) {
+                    handler.postDelayed(this, 1000)
                 }
             }
         }
@@ -306,15 +384,16 @@ class StudentOrderDetailsActivity : BaseActivity(), PaymentResultWithDataListene
     override fun onDestroy() {
         super.onDestroy()
         stopCountdown()
+        stopListeningToCanteen()
     }
 
     private fun updateTracking(order: Order) {
         val timestamps = order.statusTimestamps.toMutableMap()
-        if (!timestamps.containsKey("PLACED") && order.timestamp > 0) {
-            timestamps["PLACED"] = order.timestamp
+        if (!timestamps.containsKey(OrderStatus.PLACED) && order.timestamp > 0) {
+            timestamps[OrderStatus.PLACED] = order.timestamp
         }
 
-        if (order.status == "REJECTED" || order.status == "CANCELLED" || order.status == "EXPIRED") {
+        if (order.status == OrderStatus.REJECTED || order.status == OrderStatus.CANCELLED || order.status == OrderStatus.EXPIRED) {
             binding.placedStep.root.visibility = View.VISIBLE
             binding.acceptedStep.root.visibility = View.GONE
             binding.preparingStep.root.visibility = View.GONE
@@ -322,10 +401,10 @@ class StudentOrderDetailsActivity : BaseActivity(), PaymentResultWithDataListene
             binding.collectedStep.root.visibility = View.GONE
             binding.rejectedStep.root.visibility = View.VISIBLE
 
-            bindTrackingStep(binding.placedStep, "Placed", timestamps["PLACED"], true, false)
+            bindTrackingStep(binding.placedStep, "Placed", timestamps[OrderStatus.PLACED], true, false)
             val rejectionLabel = when (order.status) {
-                "CANCELLED" -> "Cancelled (Unpaid)"
-                "EXPIRED" -> "Expired"
+                OrderStatus.CANCELLED -> "Cancelled (Unpaid)"
+                OrderStatus.EXPIRED -> "Expired"
                 else -> "Rejected"
             }
             bindTrackingStep(binding.rejectedStep, rejectionLabel, timestamps[order.status], true, true)
@@ -340,15 +419,15 @@ class StudentOrderDetailsActivity : BaseActivity(), PaymentResultWithDataListene
         binding.rejectedStep.root.visibility = View.GONE
 
         val currentIndex = trackingStatuses.indexOf(order.status).coerceAtLeast(0)
-        bindTrackingStep(binding.placedStep, "Placed", timestamps["PLACED"], currentIndex >= 0, false)
-        bindTrackingStep(binding.acceptedStep, "Accepted", timestamps["AWAITING_PAYMENT"], currentIndex >= 1, false)
-        bindTrackingStep(binding.preparingStep, "Preparing", timestamps["PREPARING"], currentIndex >= 2, false)
-        bindTrackingStep(binding.readyStep, "Ready", timestamps["READY"], currentIndex >= 3, false)
-        bindTrackingStep(binding.collectedStep, "Collected", timestamps["COLLECTED"] ?: timestamps["COMPLETED"], currentIndex >= 4, true)
+        bindTrackingStep(binding.placedStep, "Placed", timestamps[OrderStatus.PLACED], currentIndex >= 0, false)
+        bindTrackingStep(binding.acceptedStep, "Accepted", timestamps[OrderStatus.AWAITING_PAYMENT], currentIndex >= 1, false)
+        bindTrackingStep(binding.preparingStep, "Preparing", timestamps[OrderStatus.PREPARING], currentIndex >= 2, false)
+        bindTrackingStep(binding.readyStep, "Ready", timestamps[OrderStatus.READY], currentIndex >= 3, false)
+        bindTrackingStep(binding.collectedStep, "Collected", timestamps[OrderStatus.COLLECTED] ?: timestamps[OrderStatus.COMPLETED], currentIndex >= 4, true)
     }
 
     private fun updatePickupCard(order: Order) {
-        if (order.status == "READY") {
+        if (order.status == OrderStatus.READY) {
             binding.pickupCard.visibility = View.VISIBLE
             binding.pickupCodeText.text = order.pickupCode
             generateQrCode(order.pickupToken)
@@ -415,7 +494,14 @@ class StudentOrderDetailsActivity : BaseActivity(), PaymentResultWithDataListene
 
 
     companion object {
-        private val trackingStatuses = listOf("PLACED", "AWAITING_PAYMENT", "PREPARING", "READY", "COLLECTED", "COMPLETED")
+        private val trackingStatuses = listOf(
+            OrderStatus.PLACED,
+            OrderStatus.AWAITING_PAYMENT,
+            OrderStatus.PREPARING,
+            OrderStatus.READY,
+            OrderStatus.COLLECTED,
+            OrderStatus.COMPLETED
+        )
     }
 
 }

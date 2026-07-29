@@ -200,6 +200,7 @@ class CartDetailsActivity : BaseActivity(), PaymentResultWithDataListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         val student = snapshot.getValue(Student::class.java)
                         studentName = student?.name ?: "Student"
+                        val studentPhone = student?.phoneNumber ?: ""
                         
                         val orderItems = ArrayList<Map<String, Any>>()
                         for (cartItem in cartItems) {
@@ -222,7 +223,8 @@ class CartDetailsActivity : BaseActivity(), PaymentResultWithDataListener {
                             "itemsTotal" to itemsTotal,
                             "orderType" to orderType,
                             "items" to orderItems,
-                            "studentName" to studentName
+                            "studentName" to studentName,
+                            "studentPhone" to studentPhone
                         )
 
                         val data = hashMapOf("orderDetails" to orderDetails)

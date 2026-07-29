@@ -13,6 +13,7 @@ import com.app.plateup.adapters.CurrentOrdersAdapter
 import com.app.plateup.adapters.HistoryOrdersAdapter
 import com.app.plateup.databinding.ActivityVendorOrdersBinding
 import com.app.plateup.models.Order
+import com.app.plateup.models.OrderStatus
 import com.google.android.material.tabs.TabLayout
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -94,13 +95,18 @@ class VendorOrdersActivity : BaseActivity() {
     }
 
     private fun setupWorkflowTabs() {
-        val workflowStatuses = listOf("PLACED", "AWAITING_PAYMENT", "PREPARING", "READY")
+        val workflowStatuses = listOf(
+            OrderStatus.PLACED,
+            OrderStatus.AWAITING_PAYMENT,
+            OrderStatus.PREPARING,
+            OrderStatus.READY
+        )
         workflowStatuses.forEach { status ->
             val label = when(status) {
-                "AWAITING_PAYMENT" -> "Payment"
-                "PLACED" -> "Placed"
-                "PREPARING" -> "Preparing"
-                "READY" -> "Ready"
+                OrderStatus.AWAITING_PAYMENT -> "Payment"
+                OrderStatus.PLACED -> "Placed"
+                OrderStatus.PREPARING -> "Preparing"
+                OrderStatus.READY -> "Ready"
                 else -> status
             }
             binding.workflowTabLayout.addTab(binding.workflowTabLayout.newTab().setText(label))
@@ -180,21 +186,31 @@ class VendorOrdersActivity : BaseActivity() {
     }
 
     private fun updateTabCounts() {
-        val counts = mutableMapOf("PLACED" to 0, "AWAITING_PAYMENT" to 0, "PREPARING" to 0, "READY" to 0)
+        val counts = mutableMapOf(
+            OrderStatus.PLACED to 0,
+            OrderStatus.AWAITING_PAYMENT to 0,
+            OrderStatus.PREPARING to 0,
+            OrderStatus.READY to 0
+        )
         ongoingOrders.forEach { order ->
             if (counts.containsKey(order.status)) {
                 counts[order.status] = counts[order.status]!! + 1
             }
         }
 
-        val workflowStatuses = listOf("PLACED", "AWAITING_PAYMENT", "PREPARING", "READY")
+        val workflowStatuses = listOf(
+            OrderStatus.PLACED,
+            OrderStatus.AWAITING_PAYMENT,
+            OrderStatus.PREPARING,
+            OrderStatus.READY
+        )
         workflowStatuses.forEachIndexed { index, status ->
             val count = counts[status] ?: 0
             val label = when(status) {
-                "AWAITING_PAYMENT" -> "Payment"
-                "PLACED" -> "Placed"
-                "PREPARING" -> "Preparing"
-                "READY" -> "Ready"
+                OrderStatus.AWAITING_PAYMENT -> "Payment"
+                OrderStatus.PLACED -> "Placed"
+                OrderStatus.PREPARING -> "Preparing"
+                OrderStatus.READY -> "Ready"
                 else -> status
             }
             binding.workflowTabLayout.getTabAt(index)?.text = "$label ($count)"
@@ -203,11 +219,11 @@ class VendorOrdersActivity : BaseActivity() {
 
     private fun updateFilteredList() {
         val status = when(currentWorkflowTab) {
-            0 -> "PLACED"
-            1 -> "AWAITING_PAYMENT"
-            2 -> "PREPARING"
-            3 -> "READY"
-            else -> "PLACED"
+            0 -> OrderStatus.PLACED
+            1 -> OrderStatus.AWAITING_PAYMENT
+            2 -> OrderStatus.PREPARING
+            3 -> OrderStatus.READY
+            else -> OrderStatus.PLACED
         }
 
         val filtered = ongoingOrders.filter { it.status == status }
@@ -246,10 +262,21 @@ class VendorOrdersActivity : BaseActivity() {
     }
 
     private fun Order.isLiveOrder(): Boolean {
-        return status in setOf("PLACED", "AWAITING_PAYMENT", "PREPARING", "READY")
+        return status in setOf(
+            OrderStatus.PLACED,
+            OrderStatus.AWAITING_PAYMENT,
+            OrderStatus.PREPARING,
+            OrderStatus.READY
+        )
     }
 
     private fun Order.isPastOrder(): Boolean {
-        return status in setOf("COLLECTED", "COMPLETED", "REJECTED", "EXPIRED", "CANCELLED")
+        return status in setOf(
+            OrderStatus.COLLECTED,
+            OrderStatus.COMPLETED,
+            OrderStatus.REJECTED,
+            OrderStatus.EXPIRED,
+            OrderStatus.CANCELLED
+        )
     }
 }

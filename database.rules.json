@@ -64,7 +64,7 @@
 
     "students": {
       "$uid": {
-        ".read": "auth != null && (auth.uid == $uid || root.child('admin_users').child(auth.uid).exists())",
+        ".read": "auth != null && (auth.uid == $uid || root.child('admin_users').child(auth.uid).exists() || root.child('canteen_owners').child(auth.uid).exists())",
         ".write": "auth != null && auth.uid == $uid",
         ".validate": "newData.hasChildren(['name', 'email', 'phoneNumber'])"
       }

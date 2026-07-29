@@ -6,6 +6,8 @@ import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import com.app.plateup.R
 import com.app.plateup.models.Canteen
+import com.app.plateup.models.CanteenContact
+import com.app.plateup.models.OrderStatus
 import java.text.SimpleDateFormat
 import java.time.Duration
 import java.time.LocalTime
@@ -78,6 +80,14 @@ object CanteenUtils {
             checkoutEnabled = isOpen,
             checkoutWarning = if (isOpen) null else "Ordering is currently unavailable as the canteen is closed."
         )
+    }
+
+    fun getPrimaryContact(canteen: Canteen): CanteenContact? {
+        return canteen.contacts.find { it.isPrimary }
+    }
+
+    fun isOrderActiveForCommunication(status: String): Boolean {
+        return status == OrderStatus.PREPARING || status == OrderStatus.READY
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

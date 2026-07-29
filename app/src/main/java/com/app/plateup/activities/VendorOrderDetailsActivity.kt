@@ -15,6 +15,10 @@ import com.app.plateup.databinding.ActivityVendorOrderDetailsBinding
 import com.app.plateup.models.Notification
 import com.app.plateup.models.Order
 import com.app.plateup.models.OrderItem
+import com.app.plateup.models.OrderStatus
+import com.app.plateup.models.Student
+import com.app.plateup.utils.CanteenUtils
+import com.app.plateup.utils.CommunicationUtils
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -35,6 +39,9 @@ class VendorOrderDetailsActivity : BaseActivity() {
     private lateinit var adapter: OrderDetailsAdapter
     private var orderId = ""
     private lateinit var currentOrder: Order
+    private var studentListener: ValueEventListener? = null
+    private var studentPhone: String? = null
+    private var currentStudentId: String? = null
 
     private val handler = Handler(Looper.getMainLooper())
     private val ageUpdateRunnable = object : Runnable {
@@ -75,12 +82,18 @@ class VendorOrderDetailsActivity : BaseActivity() {
             handlePrimaryAction()
         }
 
+        binding.btnContactStudent.setOnClickListener {
+            studentPhone?.let { phone ->
+                CommunicationUtils.dialNumber(this, phone)
+            }
+        }
+
         binding.rejectBtn.setOnClickListener {
             showConfirmationDialog(
                 title = "Reject Order",
                 message = "Are you sure you want to reject this order? This action cannot be undone.",
                 positiveButton = "Reject",
-                onConfirm = { updateOrderStatus("REJECTED") }
+                onConfirm = { updateOrderStatus(OrderStatus.REJECTED) }
             )
         }
 
@@ -122,22 +135,22 @@ class VendorOrderDetailsActivity : BaseActivity() {
                 binding.timeText.text = formattedTime
 
                 binding.statusChip.text = 
-                    if (order.status == "AWAITING_PAYMENT") "AWAITING PAYMENT" else order.status
+                    if (order.status == OrderStatus.AWAITING_PAYMENT) "AWAITING PAYMENT" else order.status
 
                 when (order.status) {
-                    "REJECTED", "EXPIRED", "CANCELLED" -> {
+                    OrderStatus.REJECTED, OrderStatus.EXPIRED, OrderStatus.CANCELLED -> {
                         binding.statusChip.setTextColor(ContextCompat.getColor(this@VendorOrderDetailsActivity, R.color.error))
                         binding.statusChip.setBackgroundResource(R.drawable.bg_close_chip)
                     }
-                    "ACCEPTED", "READY", "COLLECTED", "COMPLETED" -> {
+                    OrderStatus.READY, OrderStatus.COLLECTED, OrderStatus.COMPLETED -> {
                         binding.statusChip.setTextColor(ContextCompat.getColor(this@VendorOrderDetailsActivity, R.color.success))
                         binding.statusChip.setBackgroundResource(R.drawable.bg_open_chip)
                     }
-                    "PLACED", "AWAITING_PAYMENT" -> {
+                    OrderStatus.PLACED, OrderStatus.AWAITING_PAYMENT -> {
                         binding.statusChip.setTextColor(ContextCompat.getColor(this@VendorOrderDetailsActivity, R.color.primary))
                         binding.statusChip.setBackgroundResource(R.drawable.bg_pending_chip)
                     }
-                    "PREPARING" -> {
+                    OrderStatus.PREPARING -> {
                         binding.statusChip.setTextColor(ContextCompat.getColor(this@VendorOrderDetailsActivity, R.color.admin_auth))
                         binding.statusChip.setBackgroundResource(R.drawable.bg_add_request_chip)
                     }
@@ -149,6 +162,7 @@ class VendorOrderDetailsActivity : BaseActivity() {
 
                 updateButtons(order.status)
                 updateAgeIndicator()
+                updateCommunicationUI(order)
 
             }
 
@@ -178,8 +192,70 @@ class VendorOrderDetailsActivity : BaseActivity() {
         }
     }
 
+    private fun updateCommunicationUI(order: Order) {
+        if (CanteenUtils.isOrderActiveForCommunication(order.status)) {
+            // Priority 1: Phone number embedded in order
+            if (order.studentPhone.isNotEmpty()) {
+                studentPhone = order.studentPhone
+                refreshContactButtonVisibility()
+            } else {
+                // Priority 2: Fallback to student profile (for legacy orders)
+                listenToStudent(order.userId)
+            }
+        } else {
+            stopListeningToStudent()
+            studentPhone = null
+            refreshContactButtonVisibility()
+        }
+    }
+
+    private fun refreshContactButtonVisibility() {
+        val isActive = ::currentOrder.isInitialized && 
+                      CanteenUtils.isOrderActiveForCommunication(currentOrder.status)
+        binding.btnContactStudent.visibility = if (isActive && studentPhone != null) View.VISIBLE else View.GONE
+    }
+
+    private fun listenToStudent(userId: String) {
+        if (userId.isEmpty()) return
+        
+        if (userId == currentStudentId && studentListener != null) {
+            refreshContactButtonVisibility()
+            return
+        }
+
+        stopListeningToStudent()
+        currentStudentId = userId
+
+        val studentRef = database.child("students").child(userId)
+        studentListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val student = snapshot.getValue(Student::class.java)
+                studentPhone = student?.phoneNumber?.takeIf { it.isNotEmpty() }
+                refreshContactButtonVisibility()
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        registerListener(studentRef, studentListener!!)
+    }
+
+    private fun stopListeningToStudent() {
+        studentListener?.let {
+            val studentRef = database.child("students").child(currentStudentId ?: "")
+            unregisterListener(studentRef, it)
+            studentListener = null
+            currentStudentId = null
+        }
+    }
+
     private fun Order.isPastOrder(): Boolean {
-        return status in setOf("COLLECTED", "COMPLETED", "REJECTED", "EXPIRED", "CANCELLED")
+        return status in setOf(
+            OrderStatus.COLLECTED,
+            OrderStatus.COMPLETED,
+            OrderStatus.REJECTED,
+            OrderStatus.EXPIRED,
+            OrderStatus.CANCELLED
+        )
     }
 
     override fun onStart() {
@@ -190,31 +266,34 @@ class VendorOrderDetailsActivity : BaseActivity() {
     override fun onStop() {
         super.onStop()
         handler.removeCallbacks(ageUpdateRunnable)
+        stopListeningToStudent()
     }
 
     private fun updateButtons(status: String) {
         when (status) {
-            "PLACED" -> {
+            OrderStatus.PLACED -> {
                 binding.primaryActionBtn.visibility = View.VISIBLE
                 binding.primaryActionBtn.text = "Accept Order"
                 binding.primaryActionBtn.isEnabled = true
                 binding.rejectBtn.visibility = View.VISIBLE
             }
-            "AWAITING_PAYMENT" -> {
+            OrderStatus.AWAITING_PAYMENT -> {
                 binding.primaryActionBtn.visibility = View.VISIBLE
                 binding.primaryActionBtn.text = "Awaiting Payment"
                 binding.primaryActionBtn.isEnabled = false
                 binding.rejectBtn.visibility = View.GONE
             }
-            "PREPARING" -> {
+            OrderStatus.PREPARING -> {
                 binding.primaryActionBtn.visibility = View.VISIBLE
                 binding.primaryActionBtn.text = "Mark Ready"
                 binding.primaryActionBtn.isEnabled = true
                 binding.rejectBtn.visibility = View.GONE
             }
             "ACCEPTED" -> {
-                // Should transition to AWAITING_PAYMENT immediately via backend
-                binding.primaryActionBtn.visibility = View.GONE
+                // Show as Awaiting Payment while backend transitions
+                binding.primaryActionBtn.visibility = View.VISIBLE
+                binding.primaryActionBtn.text = "Awaiting Payment..."
+                binding.primaryActionBtn.isEnabled = false
                 binding.rejectBtn.visibility = View.GONE
             }
             else -> {
@@ -226,13 +305,15 @@ class VendorOrderDetailsActivity : BaseActivity() {
 
     private fun handlePrimaryAction() {
         when (currentOrder.status) {
-            "PLACED" -> updateOrderStatus("ACCEPTED")
-            "PREPARING" -> updateOrderStatus("READY")
+            OrderStatus.PLACED -> updateOrderStatus("ACCEPTED")
+            OrderStatus.PREPARING -> updateOrderStatus(OrderStatus.READY)
         }
     }
 
     private fun updateOrderStatus(status: String) {
         showLoading("Updating order status...")
+        // We set status to ACCEPTED and let the backend transition it to AWAITING_PAYMENT
+        // and set the paymentDueAt timestamp.
         val updates = mapOf<String, Any>(
             "status" to status,
             "statusTimestamps/$status" to System.currentTimeMillis()
@@ -240,10 +321,11 @@ class VendorOrderDetailsActivity : BaseActivity() {
         database.child("orders").child(orderId).updateChildren(updates)
             .addOnSuccessListener {
                 hideLoading()
-                if (status == "READY" || status == "COMPLETED") {
+                if (status == OrderStatus.READY || status == OrderStatus.COMPLETED) {
                     window.decorView.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
                 }
-                showSuccess("Order status updated to $status")
+                val label = OrderStatus.getDisplayLabel(status)
+                showSuccess("Order status is updated to \"$label\"")
             }
             .addOnFailureListener {
                 hideLoading()

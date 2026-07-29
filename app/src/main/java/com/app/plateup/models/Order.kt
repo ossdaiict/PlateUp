@@ -4,6 +4,7 @@ data class Order(
     var orderId: String = "",
     var userId: String = "",
     var studentName: String = "",
+    var studentPhone: String = "",
     var canteenId: String = "",
     var canteenName: String = "",
     var totalAmount: Int = 0,
