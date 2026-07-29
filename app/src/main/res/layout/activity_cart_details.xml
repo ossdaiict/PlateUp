@@ -137,6 +137,41 @@
             android:textSize="13sp"
             android:visibility="gone" />
 
+        <!-- Preparation Instructions -->
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/instructionsLayout"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="Preparation Instructions (Optional)"
+            app:placeholderText="Example: Less spicy, no onions, pack separately"
+            app:counterEnabled="true"
+            app:counterMaxLength="150"
+            app:boxStrokeColor="@color/primary"
+            app:hintTextColor="@color/primary">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/instructionsEdit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textMultiLine"
+                android:minLines="2"
+                android:maxLines="4"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Preparation requests are optional and may not always be accommodated."
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp" />
+
         <!-- Divider -->
 
         <View

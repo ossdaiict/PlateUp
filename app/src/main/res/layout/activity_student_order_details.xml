@@ -133,6 +133,33 @@
                         android:textSize="13sp" />
 
                     <LinearLayout
+                        android:id="@+id/instructionsLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:src="@drawable/ic_receipt_long"
+                            app:tint="@color/text_secondary" />
+
+                        <TextView
+                            android:id="@+id/instructionsText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp"
+                            tools:text="Note: Less spicy, no onions" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
                         android:id="@+id/paymentRequiredLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

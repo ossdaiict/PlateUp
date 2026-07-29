@@ -143,6 +143,14 @@ class StudentOrderDetailsActivity : BaseActivity(), PaymentResultWithDataListene
                 val formatter = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
                 val formattedTime = formatter.format(Date(order.timestamp))
                 binding.timeText.text = formattedTime
+
+                if (order.preparationInstructions.isNotBlank()) {
+                    binding.instructionsLayout.visibility = View.VISIBLE
+                    binding.instructionsText.text = "Note: ${order.preparationInstructions}"
+                } else {
+                    binding.instructionsLayout.visibility = View.GONE
+                }
+
                 binding.statusChip.text = if (order.status == OrderStatus.AWAITING_PAYMENT) "PAYMENT REQUIRED" else order.status
                 updateTracking(order)
                 updatePickupCard(order)

@@ -137,6 +137,13 @@ class VendorOrderDetailsActivity : BaseActivity() {
                 binding.statusChip.text = 
                     if (order.status == OrderStatus.AWAITING_PAYMENT) "AWAITING PAYMENT" else order.status
 
+                if (order.preparationInstructions.isNotBlank()) {
+                    binding.instructionsCard.visibility = View.VISIBLE
+                    binding.instructionsText.text = order.preparationInstructions
+                } else {
+                    binding.instructionsCard.visibility = View.GONE
+                }
+
                 when (order.status) {
                     OrderStatus.REJECTED, OrderStatus.EXPIRED, OrderStatus.CANCELLED -> {
                         binding.statusChip.setTextColor(ContextCompat.getColor(this@VendorOrderDetailsActivity, R.color.error))

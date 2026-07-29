@@ -215,6 +215,8 @@ class CartDetailsActivity : BaseActivity(), PaymentResultWithDataListener {
                         }
 
                         val orderType = if (binding.takeawayRadio.isChecked) "TAKEAWAY" else "DINE_IN"
+                        val instructions = binding.instructionsEdit.text?.toString()?.trim() ?: ""
+                        
                         val orderDetails = hashMapOf(
                             "canteenId" to canteenId,
                             "canteenName" to canteenName,
@@ -224,7 +226,8 @@ class CartDetailsActivity : BaseActivity(), PaymentResultWithDataListener {
                             "orderType" to orderType,
                             "items" to orderItems,
                             "studentName" to studentName,
-                            "studentPhone" to studentPhone
+                            "studentPhone" to studentPhone,
+                            "preparationInstructions" to instructions
                         )
 
                         val data = hashMapOf("orderDetails" to orderDetails)
