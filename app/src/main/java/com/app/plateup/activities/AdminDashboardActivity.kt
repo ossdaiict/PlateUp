@@ -58,6 +58,10 @@ class AdminDashboardActivity : BaseActivity() {
             startActivity(Intent(this, AdminPendingRequestsActivity::class.java))
         }
 
+        binding.orderFeedbackCard.setOnClickListener {
+            startActivity(Intent(this, AdminFeedbackDashboardActivity::class.java))
+        }
+
         setupPendingRequestsBadge()
 
         val message = intent.getStringExtra("WELCOME_MESSAGE") ?: intent.getStringExtra("SUCCESS_MESSAGE")

@@ -15,6 +15,7 @@ import androidx.core.content.edit
 import com.app.plateup.databinding.ActivityVendorDashboardBinding
 import com.app.plateup.models.Canteen
 import com.app.plateup.models.Order
+import com.app.plateup.models.OrderStatus
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -145,11 +146,11 @@ class VendorDashboardActivity : BaseActivity() {
                     val order = child.getValue(Order::class.java) ?: continue
                     
                     when (order.status) {
-                        "PLACED" -> {
+                        OrderStatus.PLACED -> {
                             liveOrdersCount++
                             placedOrdersCount++
                         }
-                        "AWAITING_PAYMENT", "ACCEPTED", "PREPARING", "READY" -> {
+                        OrderStatus.AWAITING_PAYMENT, OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY -> {
                             liveOrdersCount++
                         }
                     }

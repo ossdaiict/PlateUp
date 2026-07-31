@@ -360,6 +360,23 @@
                 app:strokeWidth="1dp"
                 tools:visibility="visible" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRateOrder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="16dp"
+                android:text="Rate Order"
+                android:textAllCaps="false"
+                android:textStyle="bold"
+                android:visibility="gone"
+                app:cornerRadius="18dp"
+                app:icon="@drawable/ic_star"
+                app:iconGravity="textStart"
+                app:backgroundTint="@color/primary"
+                android:textColor="@color/white"
+                tools:visibility="visible" />
+
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/orderItemsRecyclerView"
                 android:layout_width="match_parent"

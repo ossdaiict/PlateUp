@@ -25,5 +25,6 @@ data class Order(
     var pickedUpAt: Long = 0,
     var paymentDueAt: Long = 0,
     var paymentCompletedAt: Long = 0,
-    var preparationInstructions: String = ""
+    var preparationInstructions: String = "",
+    var hasFeedback: Boolean = false
 )

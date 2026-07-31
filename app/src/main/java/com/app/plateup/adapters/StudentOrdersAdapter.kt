@@ -9,6 +9,7 @@ import com.app.plateup.R
 import com.app.plateup.databinding.ItemOrderSectionHeaderBinding
 import com.app.plateup.databinding.ItemStudentOrderBinding
 import com.app.plateup.models.Order
+import com.app.plateup.models.OrderStatus
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -73,7 +74,7 @@ class StudentOrdersAdapter(
         }
         holder.binding.itemsText.text = itemsSummary
         holder.binding.totalText.text = "Grand Total • ₹${order.totalAmount}"
-        holder.binding.statusChip.text = if (order.status == "AWAITING_PAYMENT") "PAYMENT REQUIRED" else order.status
+        holder.binding.statusChip.text = if (order.status == OrderStatus.AWAITING_PAYMENT) "PAYMENT REQUIRED" else order.status
 
         holder.binding.orderTypeText.text =
             if (order.orderType == "TAKEAWAY") {
@@ -83,19 +84,19 @@ class StudentOrdersAdapter(
             }
 
         when (order.status) {
-            "PLACED", "AWAITING_PAYMENT" -> {
+            OrderStatus.PLACED, OrderStatus.AWAITING_PAYMENT -> {
                 holder.binding.statusChip.setTextColor(ContextCompat.getColor(context, R.color.primary))
                 holder.binding.statusChip.setBackgroundResource(R.drawable.bg_pending_chip)
             }
-            "PREPARING" -> {
+            OrderStatus.PREPARING -> {
                 holder.binding.statusChip.setTextColor(ContextCompat.getColor(context, R.color.admin_auth))
                 holder.binding.statusChip.setBackgroundResource(R.drawable.bg_add_request_chip)
             }
-            "ACCEPTED", "READY", "COLLECTED", "COMPLETED" -> {
+            OrderStatus.ACCEPTED, OrderStatus.READY, OrderStatus.COLLECTED, OrderStatus.COMPLETED -> {
                 holder.binding.statusChip.setTextColor(ContextCompat.getColor(context, R.color.success))
                 holder.binding.statusChip.setBackgroundResource(R.drawable.bg_open_chip)
             }
-            "REJECTED", "EXPIRED", "CANCELLED" -> {
+            OrderStatus.REJECTED, OrderStatus.EXPIRED, OrderStatus.CANCELLED -> {
                 holder.binding.statusChip.setTextColor(ContextCompat.getColor(context, R.color.error))
                 holder.binding.statusChip.setBackgroundResource(R.drawable.bg_close_chip)
             }

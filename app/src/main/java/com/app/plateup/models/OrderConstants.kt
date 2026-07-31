@@ -2,6 +2,7 @@ package com.app.plateup.models
 
 object OrderStatus {
     const val PLACED = "PLACED"
+    const val ACCEPTED = "ACCEPTED"
     const val AWAITING_PAYMENT = "AWAITING_PAYMENT"
     const val PREPARING = "PREPARING"
     const val READY = "READY"
@@ -14,6 +15,7 @@ object OrderStatus {
     fun getDisplayLabel(status: String): String {
         return when (status) {
             PLACED -> "Placed"
+            ACCEPTED -> "Accepted"
             AWAITING_PAYMENT -> "Awaiting Payment"
             PREPARING -> "Preparing"
             READY -> "Ready"

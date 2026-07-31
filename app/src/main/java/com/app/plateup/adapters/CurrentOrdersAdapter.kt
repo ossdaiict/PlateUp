@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.app.plateup.R
 import com.app.plateup.databinding.ItemVendorOrderBinding
 import com.app.plateup.models.Order
+import com.app.plateup.models.OrderStatus
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -56,7 +57,7 @@ class CurrentOrdersAdapter(
         val formattedTime = formatter.format(Date(order.timestamp))
         holder.binding.timeText.text = formattedTime
 
-        holder.binding.statusChip.text = if (order.status == "AWAITING_PAYMENT") "AWAITING PAYMENT" else order.status
+        holder.binding.statusChip.text = if (order.status == OrderStatus.AWAITING_PAYMENT) "AWAITING PAYMENT" else order.status
 
         updateStatusStyles(holder, order.status)
         updateAgeIndicator(holder, order)
@@ -66,19 +67,19 @@ class CurrentOrdersAdapter(
 
     private fun updateStatusStyles(holder: OrderViewHolder, status: String) {
         when (status) {
-            "PLACED", "AWAITING_PAYMENT" -> {
+            OrderStatus.PLACED, OrderStatus.AWAITING_PAYMENT -> {
                 holder.binding.statusChip.setTextColor(ContextCompat.getColor(context, R.color.primary))
                 holder.binding.statusChip.setBackgroundResource(R.drawable.bg_pending_chip)
             }
-            "ACCEPTED", "READY", "COLLECTED", "COMPLETED" -> {
+            OrderStatus.ACCEPTED, OrderStatus.READY, OrderStatus.COLLECTED, OrderStatus.COMPLETED -> {
                 holder.binding.statusChip.setTextColor(ContextCompat.getColor(context, R.color.success))
                 holder.binding.statusChip.setBackgroundResource(R.drawable.bg_open_chip)
             }
-            "REJECTED", "EXPIRED", "CANCELLED" -> {
+            OrderStatus.REJECTED, OrderStatus.EXPIRED, OrderStatus.CANCELLED -> {
                 holder.binding.statusChip.setTextColor(ContextCompat.getColor(context, R.color.error))
                 holder.binding.statusChip.setBackgroundResource(R.drawable.bg_close_chip)
             }
-            "PREPARING" -> {
+            OrderStatus.PREPARING -> {
                 holder.binding.statusChip.setTextColor(ContextCompat.getColor(context, R.color.admin_auth))
                 holder.binding.statusChip.setBackgroundResource(R.drawable.bg_add_request_chip)
             }

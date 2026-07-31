@@ -156,7 +156,8 @@
                         android:layout_height="wrap_content"
                         android:focusable="false"
                         android:clickable="true"
-                        android:cursorVisible="false"/>
+                        android:cursorVisible="false"
+                        android:textColor="@color/text_primary"/>
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -176,7 +177,8 @@
                         android:layout_height="wrap_content"
                         android:focusable="false"
                         android:clickable="true"
-                        android:cursorVisible="false"/>
+                        android:cursorVisible="false"
+                        android:textColor="@color/text_primary"/>
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -227,7 +229,8 @@
                         android:id="@+id/packagingFeeEdit"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="numberDecimal"/>
+                        android:inputType="numberDecimal"
+                        android:textColor="@color/text_primary"/>
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -270,7 +273,8 @@
                         android:id="@+id/paytmMidEdit"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="text"/>
+                        android:inputType="text"
+                        android:textColor="@color/text_primary"/>
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -285,7 +289,8 @@
                         android:id="@+id/paytmKeyEdit"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="textPassword"/>
+                        android:inputType="textPassword"
+                        android:textColor="@color/text_primary"/>
 
                 </com.google.android.material.textfield.TextInputLayout>
 

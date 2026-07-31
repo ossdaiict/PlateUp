@@ -296,7 +296,7 @@ class VendorOrderDetailsActivity : BaseActivity() {
                 binding.primaryActionBtn.isEnabled = true
                 binding.rejectBtn.visibility = View.GONE
             }
-            "ACCEPTED" -> {
+            OrderStatus.ACCEPTED -> {
                 // Show as Awaiting Payment while backend transitions
                 binding.primaryActionBtn.visibility = View.VISIBLE
                 binding.primaryActionBtn.text = "Awaiting Payment..."
@@ -312,7 +312,7 @@ class VendorOrderDetailsActivity : BaseActivity() {
 
     private fun handlePrimaryAction() {
         when (currentOrder.status) {
-            OrderStatus.PLACED -> updateOrderStatus("ACCEPTED")
+            OrderStatus.PLACED -> updateOrderStatus(OrderStatus.ACCEPTED)
             OrderStatus.PREPARING -> updateOrderStatus(OrderStatus.READY)
         }
     }
@@ -332,7 +332,7 @@ class VendorOrderDetailsActivity : BaseActivity() {
                     window.decorView.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
                 }
                 val label = OrderStatus.getDisplayLabel(status)
-                showSuccess("Order status is updated to \"$label\"")
+                showSuccess("Order status changed to \"$label\"")
             }
             .addOnFailureListener {
                 hideLoading()

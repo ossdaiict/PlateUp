@@ -21,6 +21,12 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.messaging.FirebaseMessaging
+import com.app.plateup.fragments.OrderFeedbackBottomSheet
+import com.app.plateup.models.Order
+import com.app.plateup.models.OrderStatus
+import android.content.Context
+import android.os.Handler
+import android.os.Looper
 
 class StudentDashboardActivity : BaseActivity() {
 
@@ -82,6 +88,56 @@ class StudentDashboardActivity : BaseActivity() {
                 showSuccess(welcomeMessage)
             }, 500)
         }
+
+        checkAndShowFeedbackPrompt()
+    }
+
+    private fun checkAndShowFeedbackPrompt() {
+        val uid = auth.currentUser?.uid ?: return
+        
+        // Find most recent unreviewed collected order
+        database.child("orders")
+            .orderByChild("userId")
+            .equalTo(uid)
+            .limitToLast(10) // Check last 10 orders to find one that needs feedback
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val orders = ArrayList<Order>()
+                    for (child in snapshot.children) {
+                        val order = child.getValue(Order::class.java)
+                        if (order != null && 
+                            (order.status == OrderStatus.COLLECTED || order.status == OrderStatus.COMPLETED) && 
+                            !order.hasFeedback) {
+                            orders.add(order)
+                        }
+                    }
+
+                    if (orders.isNotEmpty()) {
+                        // Show for the most recent one
+                        orders.sortByDescending { it.timestamp }
+                        val targetOrder = orders[0]
+
+                        // Check order-specific cooldown
+                        val prefs = getSharedPreferences("feedback_prefs", Context.MODE_PRIVATE)
+                        val lastNotNowTime = prefs.getLong("last_not_now_${targetOrder.orderId}", 0L)
+                        val currentTime = System.currentTimeMillis()
+
+                        if (currentTime - lastNotNowTime < 24 * 60 * 60 * 1000) {
+                            return
+                        }
+                        
+                        // Delay 2 seconds as per plan
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            if (!isFinishing && !isDestroyed) {
+                                val bottomSheet = OrderFeedbackBottomSheet.newInstance(targetOrder)
+                                bottomSheet.show(supportFragmentManager, "OrderFeedbackBottomSheet")
+                            }
+                        }, 2000)
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {}
+            })
     }
 
     private fun replaceFragment(fragment: Fragment) {

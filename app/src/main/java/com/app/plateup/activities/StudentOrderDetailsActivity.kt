@@ -14,6 +14,7 @@ import com.app.plateup.R
 import com.app.plateup.adapters.OrderDetailsAdapter
 import com.app.plateup.databinding.ActivityStudentOrderDetailsBinding
 import com.app.plateup.databinding.ItemOrderTrackingStepBinding
+import com.app.plateup.fragments.OrderFeedbackBottomSheet
 import com.app.plateup.models.Canteen
 import com.app.plateup.models.Order
 import com.app.plateup.models.OrderItem
@@ -100,6 +101,18 @@ class StudentOrderDetailsActivity : BaseActivity(), PaymentResultWithDataListene
             }
         }
 
+        binding.btnRateOrder.setOnClickListener {
+            currentOrder?.let { order ->
+                val bottomSheet = OrderFeedbackBottomSheet.newInstance(order)
+                bottomSheet.setOnFeedbackSubmittedListener(object : OrderFeedbackBottomSheet.OnFeedbackSubmittedListener {
+                    override fun onFeedbackSubmitted() {
+                        binding.btnRateOrder.visibility = View.GONE
+                    }
+                })
+                bottomSheet.show(supportFragmentManager, "OrderFeedbackBottomSheet")
+            }
+        }
+
     }
 
     private fun listenToServerTimeOffset() {
@@ -152,10 +165,21 @@ class StudentOrderDetailsActivity : BaseActivity(), PaymentResultWithDataListene
                 }
 
                 binding.statusChip.text = if (order.status == OrderStatus.AWAITING_PAYMENT) "PAYMENT REQUIRED" else order.status
+                val canRate = (order.status == OrderStatus.COLLECTED || order.status == OrderStatus.COMPLETED) && !order.hasFeedback
                 updateTracking(order)
                 updatePickupCard(order)
                 updatePaymentUI(order)
                 updateCommunicationUI(order)
+                updateFeedbackUI(order)
+
+                // Trigger popup immediately after collection if not yet rated
+                if (canRate && !isFinishing && !isDestroyed) {
+                    val fragment = supportFragmentManager.findFragmentByTag("OrderFeedbackBottomSheet")
+                    if (fragment == null) {
+                        val bottomSheet = OrderFeedbackBottomSheet.newInstance(order)
+                        bottomSheet.show(supportFragmentManager, "OrderFeedbackBottomSheet")
+                    }
+                }
 
                 when (order.status) {
                     OrderStatus.PLACED -> {
@@ -209,6 +233,11 @@ class StudentOrderDetailsActivity : BaseActivity(), PaymentResultWithDataListene
             binding.paymentRequiredLayout.visibility = View.GONE
             stopCountdown()
         }
+    }
+
+    private fun updateFeedbackUI(order: Order) {
+        val canRate = (order.status == OrderStatus.COLLECTED || order.status == OrderStatus.COMPLETED) && !order.hasFeedback
+        binding.btnRateOrder.visibility = if (canRate) View.VISIBLE else View.GONE
     }
 
     private fun updateCommunicationUI(order: Order) {

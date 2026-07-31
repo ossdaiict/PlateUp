@@ -63,6 +63,12 @@
             android:name=".activities.AdminPendingRequestsActivity"
             android:exported="false" />
         <activity
+            android:name=".activities.AdminFeedbackDashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.AdminCanteenFeedbackActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.AdminManageCanteensActivity"
             android:exported="false" />
         <activity
