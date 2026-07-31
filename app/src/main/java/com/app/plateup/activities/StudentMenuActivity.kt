@@ -37,6 +37,8 @@ class StudentMenuActivity : BaseActivity() {
     private lateinit var cartQuantities: HashMap<String, Int>
     private lateinit var filteredList: ArrayList<Any>
     private var canteenId = ""
+    private var canteenName = ""
+    private var canteenPackagingFee = 0
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,8 +52,8 @@ class StudentMenuActivity : BaseActivity() {
 
         canteenId = intent.getStringExtra("canteenId")!!
 
-        val canteenName = intent.getStringExtra("canteenName")!!
-        val canteenPackagingFee = intent.getIntExtra("canteenPackagingFee", 0)
+        canteenName = intent.getStringExtra("canteenName")!!
+        canteenPackagingFee = intent.getIntExtra("canteenPackagingFee", 0)
         val canteenOpen = intent.getBooleanExtra("canteenOpen", true)
         val canteenOpeningMessage = intent.getStringExtra("canteenOpeningMessage")
 
@@ -88,10 +90,20 @@ class StudentMenuActivity : BaseActivity() {
         binding.menuRecyclerView.adapter = adapter
 
         binding.menuRecyclerView.applySystemInsets(applyTop = false, applyBottom = true)
+        binding.viewCartBar.applySystemInsets(applyTop = false, applyBottom = true, useMargin = true)
 
         loadMenu(canteenId)
         listenToCart(canteenId)
         listenToCanteenAvailability()
+
+        binding.viewCartBar.setOnClickListener {
+            val intent = android.content.Intent(this, CartDetailsActivity::class.java).apply {
+                putExtra("canteenId", canteenId)
+                putExtra("canteenName", canteenName)
+                putExtra("canteenPackagingFee", canteenPackagingFee)
+            }
+            startActivity(intent)
+        }
 
         binding.searchInput.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {}
@@ -161,15 +173,18 @@ class StudentMenuActivity : BaseActivity() {
         val listener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     cartQuantities.clear()
+                    var totalItems = 0
                     for (child in snapshot.children) {
                         val cartItem = child.getValue(CartItem::class.java)?.apply {
                             if (menuItemId.isBlank()) menuItemId = child.key ?: ""
                         }
                         if (cartItem != null) {
                             cartQuantities[cartItem.menuItemId] = cartItem.quantity
+                            totalItems += cartItem.quantity
                         }
                     }
                     adapter.notifyDataSetChanged()
+                    updateCartBar(totalItems)
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -177,6 +192,15 @@ class StudentMenuActivity : BaseActivity() {
                 }
         }
         registerListener(cartRef, listener)
+    }
+
+    private fun updateCartBar(totalItems: Int) {
+        if (totalItems > 0) {
+            binding.viewCartBar.visibility = View.VISIBLE
+            binding.cartItemCountText.text = if (totalItems == 1) "1 Item" else "$totalItems Items"
+        } else {
+            binding.viewCartBar.visibility = View.GONE
+        }
     }
 
     private fun populateFilteredList(items: List<MenuItem>) {
@@ -226,7 +250,6 @@ class StudentMenuActivity : BaseActivity() {
             takeawayAvailable = menuItem.takeawayAvailable
         )
         cartRef.setValue(cartItem)
-        showSuccess("${menuItem.name} added to cart")
     }
 
     private fun increaseQuantity(menuItem: MenuItem, canteenId: String) {
