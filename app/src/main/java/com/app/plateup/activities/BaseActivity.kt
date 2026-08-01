@@ -68,10 +68,12 @@ abstract class BaseActivity : AppCompatActivity() {
 
     private fun setupAutomaticSystemInsets(rootView: View) {
         val backImage = rootView.findViewById<View>(R.id.backImage)
+        val infoImage = rootView.findViewById<View>(R.id.infoImage)
         val titleText = rootView.findViewById<View>(R.id.titleText)
         val greetingText = rootView.findViewById<View>(R.id.greetingText)
         
         backImage?.applySystemInsets(applyTop = true, applyBottom = false, useMargin = true)
+        infoImage?.applySystemInsets(applyTop = true, applyBottom = false, useMargin = true)
         titleText?.applySystemInsets(applyTop = true, applyBottom = false, useMargin = true)
         greetingText?.applySystemInsets(applyTop = true, applyBottom = false, useMargin = true)
     }

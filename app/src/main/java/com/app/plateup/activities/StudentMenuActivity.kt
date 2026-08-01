@@ -15,7 +15,11 @@ import androidx.core.widget.addTextChangedListener
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.app.plateup.R
 import com.app.plateup.adapters.StudentMenuAdapter
+import android.view.LayoutInflater
+import androidx.appcompat.app.AlertDialog
+import com.app.plateup.adapters.ContactInfoAdapter
 import com.app.plateup.databinding.ActivityStudentMenuBinding
+import com.app.plateup.databinding.DialogCanteenInfoBinding
 import com.app.plateup.models.Canteen
 import com.app.plateup.models.CartItem
 import com.app.plateup.models.MenuItem
@@ -39,6 +43,7 @@ class StudentMenuActivity : BaseActivity() {
     private var canteenId = ""
     private var canteenName = ""
     private var canteenPackagingFee = 0
+    private var currentCanteen: Canteen? = null
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -114,6 +119,7 @@ class StudentMenuActivity : BaseActivity() {
         })
 
         binding.backImage.setOnClickListener { finish() }
+        binding.infoImage.setOnClickListener { showCanteenInfoDialog() }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -122,6 +128,7 @@ class StudentMenuActivity : BaseActivity() {
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val canteen = snapshot.getValue(Canteen::class.java) ?: return
+                currentCanteen = canteen
                 val uiState = CanteenUtils.getUiState(this@StudentMenuActivity, canteen)
                 
                 if (uiState.isOpen) {
@@ -139,6 +146,29 @@ class StudentMenuActivity : BaseActivity() {
             }
         }
         registerListener(canteenRef, listener)
+    }
+
+    private fun showCanteenInfoDialog() {
+        val canteen = currentCanteen ?: return
+        if (canteen.contacts.isEmpty()) {
+            Toast.makeText(this, "No contact information available", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val dialogBinding = DialogCanteenInfoBinding.inflate(LayoutInflater.from(this))
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        dialogBinding.dialogCanteenName.text = canteen.name
+        dialogBinding.contactsRecyclerView.layoutManager = LinearLayoutManager(this)
+        dialogBinding.contactsRecyclerView.adapter = ContactInfoAdapter(this, canteen.contacts)
+
+        dialogBinding.closeButton.setOnClickListener { dialog.dismiss() }
+
+        dialog.show()
     }
 
     private fun loadMenu(canteenId: String) {
