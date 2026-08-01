@@ -57,7 +57,7 @@
         android:layout_marginHorizontal="20dp"
         android:layout_marginTop="24dp"
         android:hint="Search menu"
-        app:boxBackgroundColor="@color/background_secondary"
+        app:boxBackgroundColor="@color/surface_secondary"
         app:boxCornerRadiusTopStart="18dp"
         app:boxCornerRadiusTopEnd="18dp"
         app:boxCornerRadiusBottomStart="18dp"

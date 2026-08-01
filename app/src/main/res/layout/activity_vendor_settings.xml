@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     xmlns:tools="http://schemas.android.com/tools"
     android:fillViewport="true"
-    android:background="@color/background"
+    android:background="@color/surface_primary"
     tools:context=".activities.VendorSettingsActivity">
 
     <LinearLayout
@@ -48,7 +48,7 @@
             android:layout_marginTop="28dp"
             app:cardCornerRadius="20dp"
             app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/card_background">
+            app:cardBackgroundColor="@color/surface_card">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -124,7 +124,7 @@
             android:layout_marginTop="28dp"
             app:cardCornerRadius="20dp"
             app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/card_background">
+            app:cardBackgroundColor="@color/surface_card">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -201,7 +201,7 @@
             android:layout_marginTop="20dp"
             app:cardCornerRadius="20dp"
             app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/card_background">
+            app:cardBackgroundColor="@color/surface_card">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -246,7 +246,7 @@
             android:layout_marginTop="20dp"
             app:cardCornerRadius="20dp"
             app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/card_background">
+            app:cardBackgroundColor="@color/surface_card">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -315,7 +315,7 @@
             android:layout_marginTop="20dp"
             app:cardCornerRadius="20dp"
             app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/card_background">
+            app:cardBackgroundColor="@color/surface_card">
 
             <LinearLayout
                 android:layout_width="match_parent"

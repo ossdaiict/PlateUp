@@ -42,4 +42,50 @@
 
     <!-- 🌫️ Overlay -->
     <color name="overlay">#80000000</color>
+
+    <!-- 🏗️ Semantic Design System Roles -->
+    <!-- Surfaces -->
+    <color name="surface_primary">@color/background</color>
+    <color name="surface_secondary">#FFFFFF</color>
+    <color name="surface_card">#FFFFFF</color>
+    <color name="surface_header">@color/background</color>
+    <color name="surface_overlay">@color/overlay</color>
+
+    <!-- Text -->
+    <color name="text_main">@color/text_primary</color>
+    <color name="text_subtle">@color/text_secondary</color>
+    <color name="text_muted">@color/text_hint</color>
+    <color name="text_on_primary">@color/text_white</color>
+
+    <!-- Status -->
+    <color name="status_success">@color/success</color>
+    <color name="status_error">@color/error</color>
+    <color name="status_warning">@color/warning</color>
+    <color name="status_info">@color/admin_auth</color>
+
+    <!-- Interaction & Branding -->
+    <color name="brand_primary">@color/primary</color>
+    <color name="brand_secondary">@color/secondary</color>
+    <color name="border_divider">@color/divider</color>
+    <color name="border_subtle">@color/border</color>
+
+    <!-- Status Backgrounds (Chips/Badges) -->
+    <color name="bg_status_success">#E8F5E9</color>
+    <color name="bg_status_error">#FFEBEE</color>
+    <color name="bg_status_warning">#FFF8E1</color>
+    <color name="bg_status_info">#E6F7FB</color>
+    <color name="bg_status_accent">#E1F8F0</color>
+
+    <!-- Shimmer & Skeleton -->
+    <color name="shimmer_base">#E0E0E0</color>
+    <color name="shimmer_highlight">#BDBDBD</color>
+
+    <!-- Inactive Input (White) -->
+    <color name="surface_input_inactive">#FFFFFF</color>
+    <color name="border_input_inactive">#CCCCCC</color>
+
+    <!-- Special Backgrounds -->
+    <color name="bg_quantity">#FFF1E6</color>
+    <color name="gradient_start">#FFF8F2</color>
+    <color name="gradient_end">#FFEBD9</color>
 </resources>

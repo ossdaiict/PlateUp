@@ -3,11 +3,85 @@
     <style name="Base.Theme.PlateUp" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <item name="editTextStyle">@style/Widget.App.EditText</item>
+        <item name="textInputStyle">@style/Widget.App.TextInputLayout.OutlinedBox</item>
+        <item name="autoCompleteTextViewStyle">@style/Widget.App.AutoCompleteTextView</item>
+
+        <!-- Overriding Material 3 attributes for consistency (Light-Only Strategy) -->
+        <item name="colorSurface">@color/surface_card</item>
+        <item name="colorOnSurface">@color/text_main</item>
+        <item name="colorSurfaceContainer">@color/surface_header</item>
+        <item name="colorSurfaceContainerHigh">@color/surface_header</item>
+        <item name="colorSurfaceContainerHighest">@color/surface_header</item>
+        <item name="android:colorBackground">@color/surface_primary</item>
+        <item name="colorOnSurfaceVariant">@color/text_subtle</item>
+        <item name="colorOutline">@color/border_subtle</item>
+        <item name="colorOutlineVariant">@color/border_divider</item>
+
+        <!-- Branding -->
+        <item name="colorPrimary">@color/brand_primary</item>
+        <item name="colorOnPrimary">@color/text_on_primary</item>
+        <item name="colorSecondary">@color/brand_secondary</item>
+
+        <!-- Disable elevation overlays to ensure surfaces stay pure white -->
+        <item name="elevationOverlayEnabled">false</item>
+
+        <!-- Popup Menu consistency -->
+        <item name="popupMenuStyle">@style/Widget.App.PopupMenu</item>
+        <item name="listPopupWindowStyle">@style/Widget.App.ListPopupWindow</item>
+        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
+    </style>
+
+    <style name="Widget.App.PopupMenu" parent="Widget.AppCompat.Light.PopupMenu">
+        <item name="android:popupBackground">@android:color/white</item>
+    </style>
+
+    <style name="Widget.App.ListPopupWindow" parent="Widget.AppCompat.Light.ListPopupWindow">
+        <item name="android:popupBackground">@android:color/white</item>
     </style>
 
     <style name="Widget.App.EditText" parent="Widget.Material3.TextInputEditText.OutlinedBox">
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:textColorHint">@color/text_hint</item>
+    </style>
+
+    <style name="Widget.App.TextInputLayout.OutlinedBox" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxBackgroundColor">@color/surface_input_inactive</item>
+        <item name="boxStrokeColor">@color/border_divider</item>
+        <item name="boxStrokeWidth">1.5dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="android:textColorHint">@color/text_muted</item>
+        <item name="hintTextColor">@color/brand_primary</item>
+        <item name="startIconTint">@color/brand_primary</item>
+    </style>
+
+    <style name="Widget.App.TextInputLayout.ExposedDropdownMenu" parent="Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+        <item name="boxBackgroundColor">@color/surface_input_inactive</item>
+        <item name="boxStrokeColor">@color/border_divider</item>
+        <item name="boxStrokeWidth">1.5dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="android:textColorHint">@color/text_muted</item>
+        <item name="hintTextColor">@color/brand_primary</item>
+        <item name="startIconTint">@color/brand_primary</item>
+        <item name="materialThemeOverlay">@style/ThemeOverlay.App.ExposedDropdownMenu</item>
+    </style>
+
+    <style name="ThemeOverlay.App.ExposedDropdownMenu" parent="">
+        <item name="android:colorBackground">@android:color/white</item>
+        <item name="colorSurface">@android:color/white</item>
+        <item name="colorSurfaceContainer">@android:color/white</item>
+        <item name="colorSurfaceContainerHigh">@android:color/white</item>
+        <item name="colorSurfaceContainerHighest">@android:color/white</item>
+    </style>
+
+    <style name="ThemeOverlay.App.PopupMenu" parent="">
+        <item name="android:colorBackground">@android:color/white</item>
+        <item name="colorSurface">@android:color/white</item>
+    </style>
+
+    <style name="Widget.App.AutoCompleteTextView" parent="Widget.Material3.AutoCompleteTextView.OutlinedBox">
+        <item name="android:popupBackground">@android:color/white</item>
+        <item name="android:dropDownSelector">@android:color/white</item>
+        <item name="android:textColor">@color/text_main</item>
     </style>
 
     <style name="Theme.PlateUp" parent="Base.Theme.PlateUp" />

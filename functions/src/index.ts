@@ -839,7 +839,7 @@ async function initiateRefundInternal(orderId: string, order: any) {
 
 export const expireOrders = onSchedule("every 1 minutes", async () => {
     const now = Date.now();
-    const vendorTimeout = 5 * 60 * 1000;
+    const vendorTimeout = 10 * 60 * 1000;
 
     // Expire PLACED orders (Vendor didn't respond)
     const placedSnapshot = await admin.database().ref("orders").orderByChild("status").equalTo("PLACED").once("value");

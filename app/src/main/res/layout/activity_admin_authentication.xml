@@ -64,7 +64,7 @@
                 android:hint="Admin Code"
                 app:startIconDrawable="@drawable/ic_key"
                 app:startIconTint="@color/secondary"
-                app:boxBackgroundColor="@color/card_background"
+                app:boxBackgroundColor="@color/surface_secondary"
                 app:boxCornerRadiusTopStart="20dp"
                 app:endIconMode="password_toggle"
                 app:boxCornerRadiusTopEnd="20dp"

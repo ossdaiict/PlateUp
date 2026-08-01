@@ -138,7 +138,7 @@ abstract class BaseActivity : AppCompatActivity() {
     }
 
     fun showSuccess(message: String) {
-        val rootView = findViewById<View>(android.R.id.content)
+        val rootView = findViewById<View>(android.R.id.content) ?: return
         Snackbar.make(rootView, message, Snackbar.LENGTH_LONG)
             .setBackgroundTint(ContextCompat.getColor(this, R.color.success))
             .setTextColor(Color.WHITE)

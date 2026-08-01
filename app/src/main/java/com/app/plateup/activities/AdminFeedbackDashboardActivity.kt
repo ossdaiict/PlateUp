@@ -2,8 +2,9 @@ package com.app.plateup.activities
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.ContextThemeWrapper
 import android.view.View
-import android.widget.PopupMenu
+import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.app.plateup.R
 import com.app.plateup.adapters.AdminCanteenFeedbackAdapter
@@ -153,10 +154,13 @@ class AdminFeedbackDashboardActivity : BaseActivity() {
     }
 
     private fun showSortMenu(view: View) {
-        val popup = PopupMenu(this, view)
+        val wrapper = ContextThemeWrapper(this, R.style.ThemeOverlay_App_PopupMenu)
+        val popup = PopupMenu(wrapper, view)
         popup.menuInflater.inflate(R.menu.menu_feedback_sort, popup.menu)
         popup.setOnMenuItemClickListener { item ->
-            adapter.sort(item.title.toString())
+            val mode = item.title.toString()
+            adapter.sort(mode)
+            showSuccess("Sorted by $mode")
             true
         }
         popup.show()

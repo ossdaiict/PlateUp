@@ -49,7 +49,7 @@
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:boxBackgroundColor="@color/card_background"
+            app:boxBackgroundColor="@color/surface_secondary"
             app:boxCornerRadiusTopStart="20dp"
             app:boxCornerRadiusTopEnd="20dp"
             app:boxCornerRadiusBottomStart="20dp"
