@@ -32,6 +32,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PlateUp">
         <activity
+            android:name=".activities.AdminChangePasswordActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.VendorSettingsActivity"
             android:exported="false" />
         <activity

@@ -66,16 +66,18 @@ abstract class BaseActivity : AppCompatActivity() {
         view?.let { setupAutomaticSystemInsets(it) }
     }
 
-    private fun setupAutomaticSystemInsets(rootView: View) {
+    protected fun setupAutomaticSystemInsets(rootView: View) {
         val backImage = rootView.findViewById<View>(R.id.backImage)
         val infoImage = rootView.findViewById<View>(R.id.infoImage)
         val titleText = rootView.findViewById<View>(R.id.titleText)
         val greetingText = rootView.findViewById<View>(R.id.greetingText)
+        val toolbar = rootView.findViewById<View>(R.id.toolbar)
         
         backImage?.applySystemInsets(applyTop = true, applyBottom = false, useMargin = true)
         infoImage?.applySystemInsets(applyTop = true, applyBottom = false, useMargin = true)
         titleText?.applySystemInsets(applyTop = true, applyBottom = false, useMargin = true)
         greetingText?.applySystemInsets(applyTop = true, applyBottom = false, useMargin = true)
+        toolbar?.applySystemInsets(applyTop = true, applyBottom = false, useMargin = false)
     }
 
     private fun observeConnectivity() {

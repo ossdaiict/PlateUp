@@ -62,6 +62,10 @@ class AdminDashboardActivity : BaseActivity() {
             startActivity(Intent(this, AdminFeedbackDashboardActivity::class.java))
         }
 
+        binding.changePasswordCard.setOnClickListener {
+            startActivity(Intent(this, AdminChangePasswordActivity::class.java))
+        }
+
         setupPendingRequestsBadge()
 
         val message = intent.getStringExtra("WELCOME_MESSAGE") ?: intent.getStringExtra("SUCCESS_MESSAGE")

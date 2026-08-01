@@ -121,6 +121,16 @@
     "admin": {
       ".read": false,
       ".write": false
+    },
+
+    "admin_portal": {
+      ".read": false,
+      ".write": false
+    },
+
+    "admin_logs": {
+      ".read": false,
+      ".write": false
     }
   }
 }

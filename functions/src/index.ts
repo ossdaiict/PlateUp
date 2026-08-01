@@ -4,6 +4,7 @@ import {onCall, HttpsError} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {defineSecret} from "firebase-functions/params";
 import * as admin from "firebase-admin";
+import * as bcrypt from "bcrypt";
 import Razorpay from "razorpay";
 import * as crypto from "crypto";
 // @ts-ignore
@@ -302,20 +303,137 @@ export const vendorLogin = onCall(async (request) => {
 export const adminLogin = onCall(async (request) => {
     if (!request.auth) throw new HttpsError("unauthenticated", "User must be authenticated contextually");
 
+    const uid = request.auth.uid;
     const { adminCode } = request.data;
     if (!adminCode) {
         throw new HttpsError("invalid-argument", "Missing required parameters");
     }
 
-    const correctCode = ADMIN_CODE.value();
+    const db = admin.database();
+    const securityRef = db.ref(`admin_portal/security/lockouts/${uid}`);
+    const securitySnapshot = await securityRef.once("value");
+    const security = securitySnapshot.val() || { failedAttempts: 0, lastAttempt: 0 };
 
-    if (adminCode !== correctCode) {
-        throw new HttpsError("unauthenticated", "Invalid admin code");
+    // Lockout check: 5 failed attempts = 5-minute lockout
+    if (security.failedAttempts >= 5 && Date.now() - security.lastAttempt < 5 * 60 * 1000) {
+        throw new HttpsError("resource-exhausted", "Too many failed attempts. Please try again in 5 minutes.");
     }
 
-    await admin.database().ref(`admin_users/${request.auth.uid}`).set(true);
+    const credentialsRef = db.ref("admin_portal/credentials");
+    const credentialsSnapshot = await credentialsRef.once("value");
+    const credentials = credentialsSnapshot.val();
 
-    return { success: true };
+    let success = false;
+    let isBootstrap = false;
+
+    if (credentials && credentials.passwordHash) {
+        // DB-based login
+        success = await bcrypt.compare(adminCode, credentials.passwordHash);
+    } else {
+        // Fallback: Secret-based login (Bootstrap)
+        const correctCode = ADMIN_CODE.value();
+        if (adminCode === correctCode) {
+            // Hash outside the transaction
+            const hash = await bcrypt.hash(adminCode, 12);
+
+            // Commit hash using transaction to handle concurrency
+            await credentialsRef.transaction((current) => {
+                if (current && current.passwordHash) return; // Already bootstrapped
+                return {
+                    passwordHash: hash,
+                    credentialVersion: 1,
+                    lastUpdated: Date.now()
+                };
+            });
+            success = true;
+            isBootstrap = true;
+        }
+    }
+
+    const logRef = db.ref("admin_logs/auth_events").push();
+    const logData = {
+        adminUid: uid,
+        timestamp: Date.now(),
+        action: isBootstrap ? "BOOTSTRAP_MIGRATION" : "LOGIN",
+        status: success ? "SUCCESS" : "FAILURE"
+    };
+
+    if (success) {
+        await securityRef.remove();
+        await db.ref(`admin_users/${uid}`).set(true);
+        await logRef.set(logData);
+        return { success: true };
+    } else {
+        await securityRef.update({
+            failedAttempts: security.failedAttempts + 1,
+            lastAttempt: Date.now()
+        });
+        await logRef.set(logData);
+        throw new HttpsError("unauthenticated", "Invalid admin credentials");
+    }
+});
+
+export const changeAdminPassword = onCall(async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "User must be authenticated contextually");
+
+    // Authorization check: User must already be an admin
+    const uid = request.auth.uid;
+    const isAdminSnapshot = await admin.database().ref(`admin_users/${uid}`).once("value");
+    if (!isAdminSnapshot.exists()) {
+        throw new HttpsError("permission-denied", "Unauthorized access");
+    }
+
+    const { currentPassword, newPassword } = request.data;
+    if (!currentPassword || !newPassword) {
+        throw new HttpsError("invalid-argument", "Current and new passwords are required");
+    }
+
+    const db = admin.database();
+    const credentialsRef = db.ref("admin_portal/credentials");
+    const logRef = db.ref("admin_logs/auth_events").push();
+
+    const credentialsSnapshot = await credentialsRef.once("value");
+    if (!credentialsSnapshot.exists()) {
+        throw new HttpsError("failed-precondition", "Administrator credentials not initialized");
+    }
+
+    const currentData = credentialsSnapshot.val();
+    const isCurrentValid = await bcrypt.compare(currentPassword, currentData.passwordHash);
+
+    if (!isCurrentValid) {
+        const logFailure = {
+            adminUid: uid,
+            timestamp: Date.now(),
+            action: "PASSWORD_CHANGE",
+            status: "FAILURE"
+        };
+        await logRef.set(logFailure);
+        throw new HttpsError("unauthenticated", "Invalid current password");
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 12);
+    const updateResult = await credentialsRef.transaction(() => {
+        return {
+            passwordHash: newHash,
+            credentialVersion: 1,
+            lastUpdated: Date.now()
+        };
+    });
+
+    const logData = {
+        adminUid: uid,
+        timestamp: Date.now(),
+        action: "PASSWORD_CHANGE",
+        status: updateResult.committed ? "SUCCESS" : "FAILURE"
+    };
+
+    await logRef.set(logData);
+
+    if (updateResult.committed) {
+        return { success: true };
+    } else {
+        throw new HttpsError("internal", "Failed to commit password change. Please try again.");
+    }
 });
 
 export const initiatePayment = onCall(async (request) => {
