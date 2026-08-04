@@ -96,6 +96,9 @@
             android:name=".activities.AdminDashboardActivity"
             android:exported="false" />
         <activity
+            android:name=".activities.AdminBulkImportActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.AdminAuthenticationActivity"
             android:exported="false" />
         <activity

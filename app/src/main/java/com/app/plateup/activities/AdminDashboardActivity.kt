@@ -62,6 +62,10 @@ class AdminDashboardActivity : BaseActivity() {
             startActivity(Intent(this, AdminFeedbackDashboardActivity::class.java))
         }
 
+        binding.importMenuCard.setOnClickListener {
+            startActivity(Intent(this, AdminBulkImportActivity::class.java))
+        }
+
         binding.changePasswordCard.setOnClickListener {
             startActivity(Intent(this, AdminChangePasswordActivity::class.java))
         }
